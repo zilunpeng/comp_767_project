@@ -31,6 +31,7 @@ class Simple_training_lavaland(gym.Env):
             self.current_pos[1] = (self.current_pos[0], self.current_pos[1]+1)
 
         cell_type = self.land[self.current_pos]
+        self.traj_feature[cell_type] += 1
         self.episode_tot_reward += self.proxy_rewards[cell_type]
 
         if cell_type == 3:
@@ -45,12 +46,14 @@ class Simple_training_lavaland(gym.Env):
         self.proxy_rewards = proxy_rewards
         self.current_pos = (6, 1) # same with what's on the paper
         self.episode_tot_reward = 0
+        num_states = 4 # grass, dirt, terminal, lava(implicit)
+        self.traj_feature = np.zeros((num_states, 1)) #Phi(epsilon) in the paper. Note that they take the average in their code!
 
     def render(self, mode='human'):
         return 0
 
     # define cell types
-    # 0 = dirt   1 = grass
+    # 0 = dirt   1 = grass  3 = terminal
     def define_cell_type(self):
         self.land = np.zeros((10,10))
         self.land[0:4, 2:8] = 1
