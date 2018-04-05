@@ -1,0 +1,1 @@
+from gym_lavaland.envs.simple_training_lavaland import Simple_training_lavaland
