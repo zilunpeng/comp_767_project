@@ -6,3 +6,4 @@
 cd gym-lavaland
 pip install -e .
 ```
+Probably need to install every time we make an update to the environment.....
