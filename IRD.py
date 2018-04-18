@@ -27,16 +27,19 @@ def sample_action(action_space, h_pos, v_pos):
 # path_trajectories: the actual path of each trajectory. A path ends before -1
 def generate_trajectory(w, max_step, num_traj, num_states):
     phi_trajectories = np.zeros((num_traj,num_states))
-    path_trajectories = np.ones((num_traj,max_step))*-1
+    path_trajectories = []#np.ones((num_traj,max_step))*-1
     for eps in range(num_traj):
         pos = env.reset(w)
+        eps_trajectory = [pos]
         for step in range(max_step):
             action = sample_action(np.arange(4), pos[0], pos[1])
             done, phi_epsilon, pos = env.step(action)
-            path_trajectories[eps, step] = pos
+            # path_trajectories[eps, step] = pos
+            eps_trajectory.append(pos)
             if done:
                 break
-                phi_trajectories[eps,:] = phi_epsilon/(step+1) #taking the average so that features are on the same scale
+        path_trajectories.append(eps_trajectory)
+        phi_trajectories[eps,:] = phi_epsilon/(step+1) #taking the average so that features are on the same scale
     return phi_trajectories, path_trajectories
 
 # Calculate the distribution over trajectories (Section 4.1 of the paper)
