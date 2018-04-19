@@ -1,15 +1,9 @@
-'''
-Implementation of the training Lavaland environment
-Note that this is the training environment, so there is no lava
-Each cell has a fixed type, which is exactly same as Figure 2 (left) of the paper
-Proxy rewards are specified by the user
-'''
-
+# with lava
 import gym
 import numpy as np
 from gym.spaces import Discrete
 
-class Simple_training_lavaland(gym.Env):
+class Simple_testing_lavaland(gym.Env):
     metadata = {'render.modes': ['human']}
 
     def __init__(self):
@@ -55,10 +49,10 @@ class Simple_training_lavaland(gym.Env):
         return 0
 
     # define cell types
-    # 0 = dirt   1 = grass  2 = terminal  3 = lava
+    # 0 = dirt 1 = grass 2 = terminal 3 = lava
     def define_cell_type(self):
         self.land = np.zeros((10,10))
         self.land[0:3, 2:7] = 1
-        self.land[4:6, 3:6] = 1
+        self.land[4:6, 3:6] = 3
         self.land[7:9, 4:5] = 1
         self.land[5,8] = 2
