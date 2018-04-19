@@ -22,9 +22,10 @@ class Lavaland_spec:
         if col_idx < self.num_cols:
             ngbr_pos_coords.append(np.array([row_idx, col_idx+1])) #cell to the left of the current cell
         if row_idx > 1:
-            ngbr_pos_coords.append(np.array([row_idx-1, col_idx])) #cell below the current cell
+            ngbr_pos_coords.append(np.array([row_idx+1, col_idx])) #cell below the current cell
         if row_idx < self.num_rows:
-            ngbr_pos_coords.append(np.array([row_idx+1, col_idx])) #cell above the current cell
+            ngbr_pos_coords.append(np.array([row_idx-1, col_idx])) #cell above the current cell
+        return ngbr_pos_coords
 
     # 0 = Up    1 = Down    2 = Left    3 = Right
     def get_available_action(self, row_idx, col_idx):
@@ -35,6 +36,7 @@ class Lavaland_spec:
         if col_idx >= 2 & col_idx <= self.num_cols:
             available_actions.append(2)
         if row_idx >= 1 & row_idx <= self.num_rows-1:
-            available_actions.append(0)
-        if row_idx >= 2 & row_idx <= self.num_rows:
             available_actions.append(1)
+        if row_idx >= 2 & row_idx <= self.num_rows:
+            available_actions.append(0)
+        return available_actions
