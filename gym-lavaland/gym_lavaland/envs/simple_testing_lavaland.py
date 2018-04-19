@@ -52,7 +52,7 @@ class Simple_testing_lavaland(gym.Env):
     # 0 = dirt 1 = grass 2 = terminal 3 = lava
     def define_cell_type(self):
         self.land = np.zeros((10,10))
-        self.land[0:3, 2:7] = 1
-        self.land[4:6, 3:6] = 3
-        self.land[7:9, 4:5] = 1
+        self.land[0:4, 2:8] = 1
+        self.land[4:7, 3:7] = 3
+        self.land[7:10, 4:6] = 1
         self.land[5,8] = 2

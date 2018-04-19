@@ -1,2 +1,2 @@
-from gym_lavaland.envs.simple_training_lavaland import Simple_training_lavaland
 from gym_lavaland.envs.simple_testing_lavaland import Simple_testing_lavaland
+from gym_lavaland.envs.simple_training_lavaland import Simple_training_lavaland

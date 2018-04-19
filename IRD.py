@@ -2,7 +2,6 @@ import gym
 import gym_lavaland
 import numpy as np
 import random
-env = gym.make('Simple_training_lavaland-v0')
 
 # h_pos = horizontal position
 # v_pos = vertical position
@@ -26,7 +25,7 @@ def sample_action(action_space, h_pos, v_pos):
 # RETURN:
 # phi_trajectories: Phi(Epsilon)
 # path_trajectories: the actual path of each trajectory. A path ends before -1
-def generate_trajectory(w, max_step, num_traj, num_states):
+def generate_trajectory(w, max_step, num_traj, num_states, env):
     phi_trajectories = np.zeros((num_traj,num_states))
     path_trajectories = []#np.ones((num_traj,max_step))*-1
     for eps in range(num_traj):
@@ -35,12 +34,21 @@ def generate_trajectory(w, max_step, num_traj, num_states):
         for step in range(max_step):
             action = sample_action(np.arange(4), pos[0], pos[1])
             done, phi_epsilon, pos = env.step(action)
+            # if eps == 0:
+                # print("traj:", eps, " step:", step, " phi_traj:", phi_epsilon)
+
             # path_trajectories[eps, step] = pos
             eps_trajectory.append(pos)
             if done:
                 break
         path_trajectories.append(eps_trajectory)
-        phi_trajectories[eps,:] = phi_epsilon/(step+1) #taking the average so that features are on the same scale
+        print("-------------")
+        print(phi_epsilon)
+        print(np.true_divide(phi_epsilon, (step+1)))
+        print("-------------\n")
+
+        phi_trajectories[eps,:] = np.true_divide(phi_epsilon, (step+1)) #taking the average so that features are on the same scale
+        # print("phi_trajectories[{},:] = {}".format(eps, phi_trajectories[eps,:]))
     return phi_trajectories, path_trajectories
 
 # Calculate the distribution over trajectories (Section 4.1 of the paper)
@@ -102,7 +110,8 @@ if __name__ == "__main__":
     beta = 1
 
     # training (proxy)
-    phi_trajectories, path_trajectories = generate_trajectory(np.array([1,1,1,1]), max_step, num_traj, num_states)
+    env = gym.make('Simple_training_lavaland-v0')
+    phi_trajectories, path_trajectories = generate_trajectory(np.array([1,1,1,1]), max_step, num_traj, num_states, env)
     W = np.random.randint(-10,10,(num_proxy_rewards, num_states))
 
     expected_telda_phi = [] # 1 * 4
@@ -113,12 +122,12 @@ if __name__ == "__main__":
 
     # testing: input 1*4 -> 1*25
     num_true_rewards = 25
-    phi_true_trajectories, path_true_trajectories = generate_trajectory(np.array([1,1,1,1]), max_step, num_traj, num_states)
+    phi_true_trajectories, path_true_trajectories = generate_trajectory(np.array([1,1,1,1]), max_step, num_traj, num_states, env)
     W_true = np.random.randint(-10,10,(num_true_rewards, num_states))
 
     expected_true_phi = [] # 25 * 4
     for w in W_true:
-        traj_prob_dist = calc_traj_prob(w.reshape((1, num_states)), phi_trajectories.reshape((num_states, num_traj)))
+        traj_prob_dist = calc_traj_prob(w.reshape((1, num_states)), phi_true_trajectories.reshape((num_states, num_traj)))
         expected_true_phi_w = calc_expected_phi(phi_true_trajectories, traj_prob_dist)
         expected_true_phi.append(expected_true_phi_w)
 
