@@ -21,7 +21,7 @@ def eplisonGreedy(s, Q, eplison, WORLD_WIDTH=10):
         maxReward = np.max(rewardSpace)
         candidateActions = []
         for a, r in enumerate(rewardSpace):
-            print("state:", s, " maxReward:", maxReward, " r:", r, " rewardSpace:", rewardSpace)
+            # print("state:", s, " maxReward:", maxReward, " r:", r, " rewardSpace:", rewardSpace)
             if r == maxReward:
                 candidateActions.append(a)
 
@@ -57,7 +57,7 @@ A: # left, up, right, down = ['L', 'U', 'R', 'D']
 '''
 
 # note here states = location in the gridworld
-def dyna_q(env, state_n, action_n, init_player_state, WORLD_WIDTH, plan_count=5, n=3000, eplison=0.1, alpha=0.1, discount=0.95):
+def dyna_q(env, state_n, action_n, init_player_state, WORLD_WIDTH, scr, plan_count=5, n=3000, eplison=0.5, alpha=0.1, discount=0.95):
     # parames
     steps = 0
     observedStates = []
@@ -98,9 +98,9 @@ def dyna_q(env, state_n, action_n, init_player_state, WORLD_WIDTH, plan_count=5,
         #     print(reward, gamma)
 
         derta = alpha * (reward + discount * np.max(Q[next_state, :]) - Q[cur_state, chosen_act])
-        print("\n", cur_state, next_state, Q[cur_state, chosen_act], derta)
+        # print("\n", cur_state, next_state, Q[cur_state, chosen_act], derta)
         Q[cur_state, chosen_act] += derta
-        print("\n", Q[cur_state, chosen_act])
+        # print("\n", Q[cur_state, chosen_act])
         # model update
         reward_model[cur_state, chosen_act] = reward
         nextS_model[cur_state, chosen_act] = next_state
@@ -122,9 +122,25 @@ def dyna_q(env, state_n, action_n, init_player_state, WORLD_WIDTH, plan_count=5,
 
         # if the game has just terminated before the player got a chance to do anything!,
         # `discount` will be 0.0
+
+        if done:
+            status_update = "exp FINISH at time_step: {} with totalReward: {}".format(time_step, totalReward[time_step])
+        else:
+            status_update = "exp continues at time_step: {} with totalReward: {}".format(time_step, totalReward[time_step])
+
+        scr, last_row = env.printWorld(scr)
+        scr.addstr(last_row+1, 0, status_update)
+        scr.refresh()
+        import time
+        if done:
+            time.sleep(1)
+        else:
+            time.sleep(0.1)
+
         if done:
             # cur_state = init_player_state
-            cur_state = coord_To_Num(init_player_state, WORLD_WIDTH)
+            # cur_state = coord_To_Num(cur_state, WORLD_WIDTH)
+            break
 
     return totalReward
 
@@ -136,7 +152,7 @@ if __name__ == "__main__":
     # training stage: missing index 3 = lava?
     # testing stage: index 3 = lava
     if training:
-        proxy_reward = np.array([-1, -5, 10, 0])
+        proxy_reward = np.array([-1, -3, 10, 0])
     # else:
     #     proxy_reward = np.array([-1, -5, 10])
 
@@ -145,15 +161,29 @@ if __name__ == "__main__":
     for pc in plan_counts:
       rewards = []
       for i in range(20): #average on 20 experiments
-        # game = make_game()
-        # obs, reward, gamma = game.its_showtime()
+
+        import curses, time
+        scr = curses.initscr()
+        curses.noecho()
+        curses.cbreak()
+        statusString = "exp: {} START, reward: {}".format(i, '0')
+        scr.addstr(0, 0, statusString)
         env = gym.make('Simple_training_lavaland-v0')
         pos = env.reset(proxy_reward)
         WORLD_HEIGHT, WORLD_WIDTH = env.getDimension()
         state_n = WORLD_HEIGHT * WORLD_WIDTH
         action_n = env.getActionCount()
         init_player_state = pos
-        reward = dyna_q(env, state_n, action_n, init_player_state, WORLD_WIDTH, plan_count=pc, n=3000, eplison=0.1, alpha=0.1, discount=0.95)
+        reward = dyna_q(env, state_n, action_n, init_player_state, WORLD_WIDTH, scr, plan_count=pc, n=300, eplison=0.1, alpha=0.1, discount=0.95)
+
+        # endString = "exp: {} finished with reward: {}".format(i, reward)
+        # scr.addstr(mesg_last_row_idx+1, 0, endString)
+        # scr.refresh()
+        # time.sleep(0.5)
+        curses.nocbreak()
+        scr.keypad(False)
+        curses.echo()
+
         rewards.append(reward)
       rewards = np.array(rewards)
       rewards_list.append(rewards)
