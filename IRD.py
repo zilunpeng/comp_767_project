@@ -2,6 +2,7 @@ import gym
 import gym_lavaland
 import numpy as np
 import random
+import matplotlib.pyplot as plt
 
 # h_pos = horizontal position
 # v_pos = vertical position
@@ -42,10 +43,10 @@ def generate_trajectory(w, max_step, num_traj, num_states, env):
             if done:
                 break
         path_trajectories.append(eps_trajectory)
-        print("-------------")
-        print(phi_epsilon)
-        print(np.true_divide(phi_epsilon, (step+1)))
-        print("-------------\n")
+        # print("-------------")
+        # print(phi_epsilon)
+        # print(np.true_divide(phi_epsilon, (step+1)))
+        # print("-------------\n")
 
         phi_trajectories[eps,:] = np.true_divide(phi_epsilon, (step+1)) #taking the average so that features are on the same scale
         # print("phi_trajectories[{},:] = {}".format(eps, phi_trajectories[eps,:]))
@@ -121,7 +122,7 @@ if __name__ == "__main__":
         expected_telda_phi.append(expected_telda_phi_w)
 
     # testing: input 1*4 -> 1*25
-    num_true_rewards = 25
+    num_true_rewards = 100
     phi_true_trajectories, path_true_trajectories = generate_trajectory(np.array([1,1,1,1]), max_step, num_traj, num_states, env)
     W_true = np.random.randint(-10,10,(num_true_rewards, num_states))
 
@@ -140,10 +141,13 @@ if __name__ == "__main__":
         numerator = np.exp(beta * expected_true_reward)
         z_w_true = calc_Z_approx_bayes_w(expected_true_phi, idx, w_true, beta)
         likelihood = np.true_divide(numerator, z_w_true)
-        post = likelihood * priors[idx]
+        post = likelihood
+        #post = likelihood * priors[idx]
         posteriors.append(post)
     posteriors = np.asarray(posteriors).flatten()
 
+    plt.hist(posteriors)
+    plt.show()
     print(posteriors)
     print(posteriors.sum())
 
