@@ -2,7 +2,6 @@ import gym
 import gym_lavaland
 import numpy as np
 import random
-import matplotlib.pyplot as plt
 
 # h_pos = horizontal position
 # v_pos = vertical position
@@ -91,7 +90,7 @@ def calc_Z_approx_bayes_w(expected_Phi, index, w, beta):
     z_w = 0
     remaining_phi = np.delete(expected_Phi, index, axis=0)
     firstTerm = np.dot(w, expected_Phi[index])
-    z_w = z_w + firstTerm
+    z_w = z_w + np.exp(firstTerm)
     rem = [np.exp(beta*np.dot(w, phi_i)) for phi_i in remaining_phi]
     z_w = z_w + sum(rem)
     return z_w
@@ -114,6 +113,8 @@ if __name__ == "__main__":
     env = gym.make('Simple_training_lavaland-v0')
     phi_trajectories, path_trajectories = generate_trajectory(np.array([1,1,1,1]), max_step, num_traj, num_states, env)
     W = np.random.randint(-10,10,(num_proxy_rewards, num_states))
+    # W = np.array([0.1, -0.2, 1, 0])
+    # W = np.reshape(W, (1,4))
 
     expected_telda_phi = [] # 1 * 4
     for w in W:
@@ -122,9 +123,11 @@ if __name__ == "__main__":
         expected_telda_phi.append(expected_telda_phi_w)
 
     # testing: input 1*4 -> 1*25
-    num_true_rewards = 100
-    phi_true_trajectories, path_true_trajectories = generate_trajectory(np.array([1,1,1,1]), max_step, num_traj, num_states, env)
+    num_true_rewards = 50
+    #phi_true_trajectories, path_true_trajectories = generate_trajectory(np.array([1,1,1,1]), max_step, num_traj, num_states, env)
+    phi_true_trajectories = phi_trajectories
     W_true = np.random.randint(-10,10,(num_true_rewards, num_states))
+    W_true[0] = W[0]
 
     expected_true_phi = [] # 25 * 4
     for w in W_true:
@@ -136,20 +139,23 @@ if __name__ == "__main__":
     # input w_telda 1*4, output posterior 1 * 25
     priors = np.ones((num_true_rewards, 1))/num_true_rewards
     posteriors = []
+    store_z = []
     for idx, w_true in enumerate(W_true):
         expected_true_reward = np.dot(w_true.reshape((1, num_states)), np.asarray(expected_telda_phi).reshape((num_states, num_proxy_rewards)))
         numerator = np.exp(beta * expected_true_reward)
         z_w_true = calc_Z_approx_bayes_w(expected_true_phi, idx, w_true, beta)
+        store_z.append(z_w_true)
         likelihood = np.true_divide(numerator, z_w_true)
         post = likelihood
         #post = likelihood * priors[idx]
         posteriors.append(post)
     posteriors = np.asarray(posteriors).flatten()
 
-    plt.hist(posteriors)
-    plt.show()
     print(posteriors)
     print(posteriors.sum())
+    print(np.divide(posteriors, posteriors.sum()))
+    print(posteriors.max())
+
 
     # # calculate posterior for each possible w
     # for idx, w in enumerate(W):
