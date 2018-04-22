@@ -3,14 +3,11 @@ import numpy as np
 # Define the landscape of lavaland.
 class Lavaland_spec:
 
-    num_features = 4
-
-    # # gamma = discount factor
-    # # init_prob = |S|*1 vector where each entry denotes the probability of state s being the initial state
-    def __init__(self, num_rows, num_cols, max_num_ngbrs):
+    def __init__(self, num_rows, num_cols, max_num_ngbrs, num_features):
         self.num_rows = num_rows
         self.num_cols = num_cols
         self.max_num_ngbrs = max_num_ngbrs
+        self.num_features = num_features
 
     # Return the coordinates of a cell's neighbors
     def get_ngbr_pos_coord(self, row_idx, col_idx, action):
@@ -45,10 +42,11 @@ class Lavaland_spec:
         state_trans_mat = np.zeros((n_states, n_states, n_actions))
         for row_idx in range(self.num_rows):
             for col_idx in range(self.num_cols):
-                state0_idx = self.sub2ind(self, row_idx, col_idx)
+                state0_idx = self.sub2ind(row_idx, col_idx)
                 for action in self.get_available_action(row_idx, col_idx):
                     state1_idx = self.get_ngbr_pos_coord(row_idx, col_idx, action)
                     state_trans_mat[state0_idx, state1_idx, action] = 1
+        return state_trans_mat
 
     def sub2ind(self, row_idx, col_idx):
         return self.num_rows*col_idx + row_idx
@@ -65,8 +63,7 @@ class Lavaland_spec:
             return 2
         return 0
 
-    @staticmethod
-    def get_training_land_type(row, col):
+    def get_training_land_type(self, row, col):
         if row>=0 and row<=4 and col>=2 and col<=8:
             return 1
         if row>=7 and row<=10 and col>=4 and col<=6:
@@ -75,15 +72,11 @@ class Lavaland_spec:
             return 2
         return 0
 
-
-
-    def get_num_rows(self):
-        return 10
-
-    @staticmethod
-    def get_num_cols():
-        return 10
-
-    @staticmethod
-    def get_num_features():
-        return 4
+    def form_rewards(self, w):
+        rewards = np.zeros((self.num_rows * self.num_cols, self.num_features))
+        for r in range(self.num_rows):
+            for c in range(self.num_cols):
+                idx = self.sub2ind(r, c)
+                type = self.get_training_land_type(r, c)
+                rewards[idx, type] = 1
+        return rewards
