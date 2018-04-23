@@ -64,7 +64,7 @@ def generate_trajectory(w, max_step, num_traj, num_states, env):
         state_freq[pos_idx] += 1
         for step in range(max_step):
             action = sample_action(np.arange(4), pos[0], pos[1])
-            done, phi_epsilon, pos = env.step(action)
+            done, phi_epsilon, pos, _ = env.step(action)
             pos_idx = sub2ind(pos[0], pos[1])
             eps_trajectory.append(pos_idx)
             state_freq[pos_idx] += 1
@@ -118,11 +118,21 @@ def value_iteration(state_trans_prob, rewards, gamma, error):
         if max([abs(values[s] - values_tmp[s]) for s in range(num_cells)]) < error:
             break
 
+    temp = np.reshape(values, (10,10))
+    temp = np.transpose(temp)
+
     policy = np.zeros([num_cells])
     for s in range(num_cells):
-        policy[s] = np.argmax([sum([state_trans_prob[s, s1, a]*(rewards[s]+gamma*values[s1])
-                              for s1 in range(num_cells)])
-                              for a in range(num_actions)])
+        p_temp = []
+        for a in range(num_actions):
+            temp1 = 0
+            for s1 in range(num_cells):
+                temp1 = temp1 + state_trans_prob[s, s1, a]*(rewards[s]+gamma*values[s1])
+            p_temp.append(temp1)
+        policy[s] = np.argmax(p_temp)
+        # policy[s] = np.argmax([sum([state_trans_prob[s, s1, a]*(rewards[s]+gamma*values[s1])
+        #                       for s1 in range(num_cells)])
+        #                       for a in range(num_actions)])
     return policy
 
 def sub2ind(row_idx, col_idx):
@@ -139,19 +149,19 @@ if __name__ == "__main__":
 
     expected_telda_phi = [] # 1 * 4
     for w in W:
-        # w = np.array((0.1, -0.2, 1, 0))
+        w = np.array((5, -5, 10, 0))
         w = w.reshape((num_states,1))
         cell_type = lavaland.form_rewards(w)
         rewards = cell_type@w
-        #temp2 = np.reshape(rewards, (10,10))
-        #temp2 = np.transpose(temp2)
+        temp2 = np.reshape(rewards, (10,10))
+        temp2 = np.transpose(temp2)
         state_trans_prob = lavaland.get_state_trans_mat()
         policy = value_iteration(state_trans_prob, rewards, gamma, error=0.01)
-        #temp2 = np.reshape(policy, (10,10))
-        #temp2 = np.transpose(temp2)
+        temp2 = np.reshape(policy, (10,10))
+        temp2 = np.transpose(temp2)
         expected_telda_phi_w = compute_state_visition_freq(state_trans_prob, gamma, path_trajectories, policy)
-        # temp = np.reshape(expected_telda_phi_w, (10,10))
-        # temp = np.transpose(temp)
+        temp = np.reshape(expected_telda_phi_w, (10,10))
+        temp = np.transpose(temp)
         expected_telda_phi_w = np.multiply(expected_telda_phi_w, state_freq)
         expected_telda_phi_w = np.tile(expected_telda_phi_w, (1,4))
         expected_telda_phi_w = np.multiply(cell_type, expected_telda_phi_w)
