@@ -14,7 +14,7 @@ def get_opposite_action(action):
 
 # Return the linear index given a (cell) position-action pair
 def pos_action_pair_2_ind(row_ind, col_ind, action):
-    return (num_cols*(col_ind) + row_ind)*num_actions + action
+    return (num_rows*(col_ind) + row_ind)*num_actions + action
 
 def sub2ind(row_idx, col_idx):
     return num_rows * col_idx + row_idx
