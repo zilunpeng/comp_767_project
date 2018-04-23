@@ -32,7 +32,7 @@ def generate_trajectory(w, max_step, num_traj, num_states, env):
     path_trajectories = []#np.ones((num_traj,max_step))*-1
     for eps in range(num_traj):
         pos = env.reset(w)
-        eps_trajectory = [pos]
+        eps_trajectory = [sub2ind(pos[0], pos[1])]
         for step in range(max_step):
             action = sample_action(np.arange(4), pos[0], pos[1])
             done, phi_epsilon, pos = env.step(action)
@@ -40,7 +40,7 @@ def generate_trajectory(w, max_step, num_traj, num_states, env):
                 # print("traj:", eps, " step:", step, " phi_traj:", phi_epsilon)
 
             # path_trajectories[eps, step] = pos
-            eps_trajectory.append(pos)
+            eps_trajectory.append(sub2ind(pos[0], pos[1]))
             if done:
                 break
         path_trajectories.append(eps_trajectory)
@@ -67,7 +67,7 @@ def calc_expected_phi(phi_trajectories, traj_prob):
     expected_phi = np.multiply(phi_trajectories, np.transpose(traj_prob))
     return sum(expected_phi)
 
-#Note that this does not include the first term of Equation 3
+
 def calc_Z_approx_bayes_w(expected_Phi, index, w, beta):
     z_w = 0
     remaining_phi = np.delete(expected_Phi, index, axis=0)
@@ -76,8 +76,6 @@ def calc_Z_approx_bayes_w(expected_Phi, index, w, beta):
     rem = [np.exp(beta*np.dot(w, phi_i)) for phi_i in remaining_phi]
     z_w = z_w + sum(rem)
     return z_w
-
-
 
 def value_iteration(state_trans_prob, rewards, gamma, error):
     num_cells = 100 #10*10 grid
@@ -100,6 +98,9 @@ def value_iteration(state_trans_prob, rewards, gamma, error):
                               for a in range(num_actions)])
     return policy
 
+def sub2ind(row_idx, col_idx):
+    num_rows = 10
+    return num_rows*col_idx + row_idx
 
 if __name__ == "__main__":
     num_states = 4
