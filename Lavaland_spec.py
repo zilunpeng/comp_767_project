@@ -51,8 +51,7 @@ class Lavaland_spec:
     def sub2ind(self, row_idx, col_idx):
         return self.num_rows*col_idx + row_idx
 
-    @staticmethod
-    def get_testing_land_type(row, col):
+    def get_testing_land_type(self, row, col):
         if row>=0 and row<=4 and col>=2 and col<=8:
             return 1
         if row>=4 and row<=7 and col>=3 and col<=7:
@@ -80,5 +79,14 @@ class Lavaland_spec:
             for c in range(self.num_cols):
                 idx = self.sub2ind(r, c)
                 type = self.get_training_land_type(r, c)
+                rewards[idx, type] = 1
+        return rewards
+
+    def form_testing_rewards(self, w):
+        rewards = np.zeros((self.num_rows * self.num_cols, self.num_features))
+        for r in range(self.num_rows):
+            for c in range(self.num_cols):
+                idx = self.sub2ind(r, c)
+                type = self.get_testing_land_type(r, c)
                 rewards[idx, type] = 1
         return rewards
