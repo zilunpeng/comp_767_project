@@ -134,11 +134,12 @@ if __name__ == "__main__":
     # training (proxy)
     env = gym.make('Simple_training_lavaland-v0')
     phi_trajectories, path_trajectories, state_freq = generate_trajectory(np.array([1,1,1,1]), max_step, num_traj, num_states, env)
+    state_freq = state_freq/num_traj
     W = np.random.randint(-10,10,(num_proxy_rewards, num_states))
 
     expected_telda_phi = [] # 1 * 4
     for w in W:
-        #w = np.array((0.1, -0.2, 1, 0))
+        # w = np.array((0.1, -0.2, 1, 0))
         w = w.reshape((num_states,1))
         cell_type = lavaland.form_rewards(w)
         rewards = cell_type@w
@@ -150,16 +151,17 @@ if __name__ == "__main__":
         #temp2 = np.transpose(temp2)
         expected_telda_phi_w = compute_state_visition_freq(state_trans_prob, gamma, path_trajectories, policy)
         # temp = np.reshape(expected_telda_phi_w, (10,10))
+        # temp = np.transpose(temp)
         expected_telda_phi_w = np.multiply(expected_telda_phi_w, state_freq)
         expected_telda_phi_w = np.tile(expected_telda_phi_w, (1,4))
         expected_telda_phi_w = np.multiply(cell_type, expected_telda_phi_w)
         expected_telda_phi_w = np.sum(expected_telda_phi_w, axis=0)
         # traj_prob_dist = calc_traj_prob(w.reshape((1, num_states)), phi_trajectories.reshape((num_states, num_traj)))
         # expected_telda_phi_w = calc_expected_phi(phi_trajectories, traj_prob_dist)
-        # expected_telda_phi.append(expected_telda_phi_w)
+        expected_telda_phi.append(expected_telda_phi_w)
 
     # testing: input 1*4 -> 1*25
-    num_true_rewards = 50
+    num_true_rewards = 10
     #phi_true_trajectories, path_true_trajectories = generate_trajectory(np.array([1,1,1,1]), max_step, num_traj, num_states, env)
     phi_true_trajectories = phi_trajectories
     W_true = np.random.randint(-10,10,(num_true_rewards, num_states))
@@ -167,8 +169,18 @@ if __name__ == "__main__":
 
     expected_true_phi = [] # 25 * 4
     for w in W_true:
-        traj_prob_dist = calc_traj_prob(w.reshape((1, num_states)), phi_true_trajectories.reshape((num_states, num_traj)))
-        expected_true_phi_w = calc_expected_phi(phi_true_trajectories, traj_prob_dist)
+        w = w.reshape((num_states, 1))
+        cell_type = lavaland.form_rewards(w)
+        rewards = cell_type @ w
+        state_trans_prob = lavaland.get_state_trans_mat()
+        policy = value_iteration(state_trans_prob, rewards, gamma, error=0.01)
+        expected_true_phi_w = compute_state_visition_freq(state_trans_prob, gamma, path_trajectories, policy)
+        expected_true_phi_w = np.multiply(expected_true_phi_w, state_freq)
+        expected_true_phi_w = np.tile(expected_true_phi_w, (1, 4))
+        expected_true_phi_w = np.multiply(cell_type, expected_true_phi_w)
+        expected_true_phi_w = np.sum(expected_true_phi_w, axis=0)
+        # traj_prob_dist = calc_traj_prob(w.reshape((1, num_states)), phi_true_trajectories.reshape((num_states, num_traj)))
+        # expected_true_phi_w = calc_expected_phi(phi_true_trajectories, traj_prob_dist)
         expected_true_phi.append(expected_true_phi_w)
 
     # calculate posterior for each possible true_w:
