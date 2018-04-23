@@ -133,6 +133,8 @@ def value_iteration(state_trans_prob, rewards, gamma, error):
         # policy[s] = np.argmax([sum([state_trans_prob[s, s1, a]*(rewards[s]+gamma*values[s1])
         #                       for s1 in range(num_cells)])
         #                       for a in range(num_actions)])
+    temp2 = np.reshape(policy, (10,10))
+    temp2 = np.transpose(temp2)
     return policy
 
 def sub2ind(row_idx, col_idx):
@@ -149,7 +151,7 @@ if __name__ == "__main__":
 
     expected_telda_phi = [] # 1 * 4
     for w in W:
-        w = np.array((5, -5, 10, 0))
+        w = np.array((0.1, -10, 10, 0))
         w = w.reshape((num_states,1))
         cell_type = lavaland.form_rewards(w)
         rewards = cell_type@w
