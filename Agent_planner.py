@@ -39,10 +39,14 @@ def form_ineq_mat():
         w = w.reshape((4,1))
         cell_type = lavaland.form_testing_rewards(w)
         rewards = cell_type @ w
-        rewards = rewards.reshape((1, num_cells))
-        rewards = np.repeat(rewards, num_actions)
-        #linprog_ineq_mat[ind, 0:num_cells*num_actions] = -1*rewards
-        linprog_ineq_mat[ind, 0:num_cells * num_actions] = -0.25 * rewards
+        for r_ind in range(num_rows):
+            for c_ind in range(num_cols):
+                available_actions = lavaland.get_available_action(r_ind, c_ind)
+                for a_ind in range(len(available_actions)):
+                    pa_idx = pos_action_pair_2_ind(r_ind, c_ind, available_actions[a_ind])
+                    ngbr_pos = lavaland.get_ngbr_pos_coord(r_ind, c_ind, available_actions[a_ind])
+                    reward = rewards[ngbr_pos]
+                    linprog_eq_mat[ind, pa_idx] = -1*reward
         linprog_ineq_mat[ind, -1] = 1
         ind = ind + 1
     return linprog_ineq_mat
@@ -72,8 +76,8 @@ def form_eq_mat():
 
 if __name__ == "__main__":
     lavaland = Lavaland_spec(10, 10, 4, 4)
-    sampled_w = [np.array((1,-1,2,5)),np.array((4,3,1,-5)),np.array((2,-2,5,10))] #just for testing
-    #sampled_w = [np.array((0.1, -10, 10, 0))]
+    #sampled_w = [np.array((1,-1,2,5)),np.array((4,3,1,-5)),np.array((2,-2,5,10))] #just for testing
+    sampled_w = [np.array((0.1, -10, 10, 0))]
     num_sampled_w = len(sampled_w)
     num_rows = 10
     num_cols = 10
