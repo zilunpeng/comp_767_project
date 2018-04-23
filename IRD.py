@@ -5,6 +5,14 @@ from Lavaland_spec import Lavaland_spec
 import random
 import copy
 
+num_states = 4
+max_step = 100
+num_traj = 50
+num_proxy_rewards = 1
+beta = 1
+gamma = 0.9
+lavaland = Lavaland_spec(10, 10, 4, 4)
+
 # h_pos = horizontal position
 # v_pos = vertical position
 def sample_action(action_space, h_pos, v_pos):
@@ -21,6 +29,24 @@ def sample_action(action_space, h_pos, v_pos):
     action_space = np.delete(action_space, deleted_action)
     return np.random.choice(action_space, 1)
 
+#  Return Nx1 vector - state visitation frequencies
+def compute_state_visition_freq(state_trans_mat, gamma, trajs, policy):
+    N_STATES, _, N_ACTIONS = np.shape(state_trans_mat)
+
+    # mu[s, t] is the prob of visiting state s at time t
+    mu = np.zeros([N_STATES, max_step])
+
+    for traj in trajs:
+        mu[traj[0], 0] += 1
+    mu[:, 0] = mu[:, 0] / len(trajs)
+
+    for s in range(N_STATES):
+        for t in range(max_step - 1):
+                mu[s, t + 1] = sum([mu[pre_s, t] * state_trans_mat[pre_s, s, int(policy[pre_s])] for pre_s in range(N_STATES)])
+    p = np.sum(mu, 1)
+    return p.reshape((N_STATES,1))
+
+
 # w = proxy reward
 # max_step = maximum number of steps agent will take if not reaching the terminal
 # num_traj = number of trajectories that we sample
@@ -30,17 +56,18 @@ def sample_action(action_space, h_pos, v_pos):
 def generate_trajectory(w, max_step, num_traj, num_states, env):
     phi_trajectories = np.zeros((num_traj,num_states))
     path_trajectories = []#np.ones((num_traj,max_step))*-1
+    state_freq = np.zeros((100,1))
     for eps in range(num_traj):
         pos = env.reset(w)
-        eps_trajectory = [sub2ind(pos[0], pos[1])]
+        pos_idx = sub2ind(pos[0], pos[1])
+        eps_trajectory = [pos_idx]
+        state_freq[pos_idx] += 1
         for step in range(max_step):
             action = sample_action(np.arange(4), pos[0], pos[1])
             done, phi_epsilon, pos = env.step(action)
-            # if eps == 0:
-                # print("traj:", eps, " step:", step, " phi_traj:", phi_epsilon)
-
-            # path_trajectories[eps, step] = pos
-            eps_trajectory.append(sub2ind(pos[0], pos[1]))
+            pos_idx = sub2ind(pos[0], pos[1])
+            eps_trajectory.append(pos_idx)
+            state_freq[pos_idx] += 1
             if done:
                 break
         path_trajectories.append(eps_trajectory)
@@ -51,7 +78,7 @@ def generate_trajectory(w, max_step, num_traj, num_states, env):
 
         phi_trajectories[eps,:] = np.true_divide(phi_epsilon, (step+1)) #taking the average so that features are on the same scale
         # print("phi_trajectories[{},:] = {}".format(eps, phi_trajectories[eps,:]))
-    return phi_trajectories, path_trajectories
+    return phi_trajectories, path_trajectories, state_freq
 
 # Calculate the distribution over trajectories (Section 4.1 of the paper)
 def calc_traj_prob(w, trajectories):
@@ -86,7 +113,7 @@ def value_iteration(state_trans_prob, rewards, gamma, error):
         values_tmp = copy.deepcopy(values)
 
         for s in range(num_cells):
-            values[s] = values[s] = max([sum([state_trans_prob[s, s1, a]*(rewards[s] + gamma*values_tmp[s1]) for s1 in range(num_cells)]) for a in range(num_actions)])
+            values[s] = max([sum([state_trans_prob[s, s1, a]*(rewards[s] + gamma*values_tmp[s1]) for s1 in range(num_cells)]) for a in range(num_actions)])
 
         if max([abs(values[s] - values_tmp[s]) for s in range(num_cells)]) < error:
             break
@@ -103,29 +130,33 @@ def sub2ind(row_idx, col_idx):
     return num_rows*col_idx + row_idx
 
 if __name__ == "__main__":
-    num_states = 4
-    max_step = 100
-    num_traj = 50
-    num_proxy_rewards = 1
-    beta = 1
-    gamma = 0.9
-    lavaland = Lavaland_spec(10,10,4,4)
 
     # training (proxy)
     env = gym.make('Simple_training_lavaland-v0')
-    phi_trajectories, path_trajectories = generate_trajectory(np.array([1,1,1,1]), max_step, num_traj, num_states, env)
+    phi_trajectories, path_trajectories, state_freq = generate_trajectory(np.array([1,1,1,1]), max_step, num_traj, num_states, env)
     W = np.random.randint(-10,10,(num_proxy_rewards, num_states))
 
     expected_telda_phi = [] # 1 * 4
     for w in W:
+        #w = np.array((0.1, -0.2, 1, 0))
         w = w.reshape((num_states,1))
-        rewards = lavaland.form_rewards(w)
-        rewards = rewards@w
+        cell_type = lavaland.form_rewards(w)
+        rewards = cell_type@w
+        #temp2 = np.reshape(rewards, (10,10))
+        #temp2 = np.transpose(temp2)
         state_trans_prob = lavaland.get_state_trans_mat()
         policy = value_iteration(state_trans_prob, rewards, gamma, error=0.01)
-        traj_prob_dist = calc_traj_prob(w.reshape((1, num_states)), phi_trajectories.reshape((num_states, num_traj)))
-        expected_telda_phi_w = calc_expected_phi(phi_trajectories, traj_prob_dist)
-        expected_telda_phi.append(expected_telda_phi_w)
+        #temp2 = np.reshape(policy, (10,10))
+        #temp2 = np.transpose(temp2)
+        expected_telda_phi_w = compute_state_visition_freq(state_trans_prob, gamma, path_trajectories, policy)
+        # temp = np.reshape(expected_telda_phi_w, (10,10))
+        expected_telda_phi_w = np.multiply(expected_telda_phi_w, state_freq)
+        expected_telda_phi_w = np.tile(expected_telda_phi_w, (1,4))
+        expected_telda_phi_w = np.multiply(cell_type, expected_telda_phi_w)
+        expected_telda_phi_w = np.sum(expected_telda_phi_w, axis=0)
+        # traj_prob_dist = calc_traj_prob(w.reshape((1, num_states)), phi_trajectories.reshape((num_states, num_traj)))
+        # expected_telda_phi_w = calc_expected_phi(phi_trajectories, traj_prob_dist)
+        # expected_telda_phi.append(expected_telda_phi_w)
 
     # testing: input 1*4 -> 1*25
     num_true_rewards = 50

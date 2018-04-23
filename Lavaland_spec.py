@@ -25,12 +25,12 @@ class Lavaland_spec:
         available_actions = []
 
         if col_idx >= 1 and col_idx <= self.num_cols-1:
-            available_actions.append(3)
-        if col_idx >= 2 and col_idx <= self.num_cols:
             available_actions.append(2)
-        if row_idx >= 1 and row_idx <= self.num_rows-1:
+        if col_idx >= 0 and col_idx < self.num_cols-1:
+            available_actions.append(3)
+        if row_idx >= 0 and row_idx < self.num_rows-1:
             available_actions.append(1)
-        if row_idx >= 2 and row_idx <= self.num_rows:
+        if row_idx >= 1 and row_idx <= self.num_rows-1:
             available_actions.append(0)
         return available_actions
 
@@ -64,11 +64,13 @@ class Lavaland_spec:
         return 0
 
     def get_training_land_type(self, row, col):
-        if row>=0 and row<=4 and col>=2 and col<=8:
+        if row>=0 and row<=3 and col>=2 and col<=7:
             return 1
-        if row>=7 and row<=10 and col>=4 and col<=6:
+        elif row>=4 and row<=6 and col>=3 and col<=6:
             return 1
-        if row==5 and col==8:
+        elif row>=7 and row<=9 and col>=4 and col<=5:
+            return 1
+        elif row==5 and col==8:
             return 2
         return 0
 
