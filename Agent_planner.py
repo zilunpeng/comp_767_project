@@ -75,12 +75,25 @@ def form_eq_mat():
     return linprog_eq_mat
 
 #convert a |S|*|S|*|A| vector into policy
-# def convert2policy(x):
+#return -1 if there is no action with > 0 probability
+def convert2policy(x):
+    x = x['x']
+    policy = np.zeros((num_rows, num_cols))
+    for r_ind in range(num_rows):
+        for c_ind in range(num_cols):
+            idx = pos_action_pair_2_ind(r_ind, c_ind, 0)
+            action_prob = x[idx:idx+num_actions]
+            if np.sum(action_prob) == 0:
+                policy[r_ind, c_ind] = -1
+            else:
+                action_prob = np.divide(action_prob, np.sum(action_prob))
+                policy[r_ind, c_ind] = np.argmax(action_prob)
+    return policy
 
 
 if __name__ == "__main__":
     lavaland = Lavaland_spec(10, 10, 4, 4)
-    sampled_w = [np.array((0.1, -10, 10, 0)),np.array((0.1, -10, 4, -5))] #just for testing
+    sampled_w = [np.array((5, -10, 10, 0)),np.array((5, -10, 10, -5)), np.array((5, -10, 10, 10)),np.array((5, -10, 10, -10)),] #just for testing
     #sampled_w = [np.array((0.1, -10, 10, 0))]
     num_sampled_w = len(sampled_w)
     num_rows = 10
@@ -99,4 +112,5 @@ if __name__ == "__main__":
     bounds = form_bounds()
 
     x = linprog(c, A_ub=linprog_ineq_mat, b_ub=linprog_ineq_vec, A_eq=linprog_eq_mat, b_eq=linprog_eq_vec, bounds=bounds, options={"disp": True})
+    policy = convert2policy(x)
     print(x)
