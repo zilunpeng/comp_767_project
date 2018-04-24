@@ -4,6 +4,7 @@ import numpy as np
 from Lavaland_spec import Lavaland_spec
 import random
 import copy
+from itertools import product
 
 num_states = 4
 max_step = 100
@@ -31,18 +32,24 @@ def sample_action(action_space, h_pos, v_pos):
 
 #  Return Nx1 vector - state visitation frequencies
 def compute_state_visition_freq(state_trans_mat, gamma, trajs, policy):
+    temp2 = np.reshape(policy, (10, 10))
+    temp2 = np.transpose(temp2)
+
     N_STATES, _, N_ACTIONS = np.shape(state_trans_mat)
 
-    # mu[s, t] is the prob of visiting state s at time t
     mu = np.zeros([N_STATES, max_step])
+    mu[sub2ind(5,1),0] = 1
+    visited_states = [sub2ind(5,1)]
 
-    for traj in trajs:
-        mu[traj[0], 0] += 1
-    mu[:, 0] = mu[:, 0] / len(trajs)
-
-    for s in range(N_STATES):
-        for t in range(max_step - 1):
-                mu[s, t + 1] = sum([mu[pre_s, t] * state_trans_mat[pre_s, s, int(policy[pre_s])] for pre_s in range(N_STATES)])
+    for t in range(1, max_step):
+        prev_s = np.where(mu[:,t-1]>0)[0]
+        (prev_s_rind, prev_s_cind) = ind2sub(prev_s)
+        s = lavaland.get_ngbr_pos_coord(prev_s_rind,prev_s_cind,policy[prev_s])
+        if s==-1 or prev_s==85 or s in visited_states: #terminal or out of bounds
+            break
+        else:
+            mu[s, t] += mu[prev_s, t-1]
+        visited_states.append(s)
     p = np.sum(mu, 1)
     return p.reshape((N_STATES,1))
 
@@ -123,24 +130,21 @@ def value_iteration(state_trans_prob, rewards, gamma, error):
 
     policy = np.zeros([num_cells])
     for s in range(num_cells):
-        p_temp = []
-        for a in range(num_actions):
-            temp1 = 0
-            for s1 in range(num_cells):
-                temp1 = temp1 + state_trans_prob[s, s1, a]*(rewards[s]+gamma*values[s1])
-            p_temp.append(temp1)
-        policy[s] = np.argmax(p_temp)
-        # policy[s] = np.argmax([sum([state_trans_prob[s, s1, a]*(rewards[s]+gamma*values[s1])
-        #                       for s1 in range(num_cells)])
-        #                       for a in range(num_actions)])
+        policy[s] = np.argmax([sum([state_trans_prob[s, s1, a]*(rewards[s]+gamma*values[s1])
+                              for s1 in range(num_cells)])
+                              for a in range(num_actions)])
     temp2 = np.reshape(policy, (10,10))
     temp2 = np.transpose(temp2)
     return policy
 
 def sub2ind(row_idx, col_idx):
     num_rows = 10
-    return num_rows * row_idx + col_idx
-    # return num_rows*col_idx + row_idx
+    #return num_rows * row_idx + col_idx
+    return num_rows*col_idx + row_idx
+
+def ind2sub(ind):
+    num_cols = 10
+    return (int(ind % num_cols), int(ind / num_cols))
 
 if __name__ == "__main__":
 
@@ -152,7 +156,8 @@ if __name__ == "__main__":
 
     expected_telda_phi = [] # 1 * 4
     # W[0] = np.array((0.1, -10, 10, 0))
-    W[0] = np.array((5, -5, 10, 0))
+    #W[0] = np.array((5, -5, 10, 0))
+    W[0] = np.array((0.1, -0.2, 1, 0))
     for w in W:
         w = w.reshape((num_states,1))
         cell_type = lavaland.form_rewards(w)
@@ -179,7 +184,7 @@ if __name__ == "__main__":
     #phi_true_trajectories, path_true_trajectories = generate_trajectory(np.array([1,1,1,1]), max_step, num_traj, num_states, env)
     phi_true_trajectories = phi_trajectories
     W_true = np.random.randint(-10,10,(num_true_rewards, num_states))
-    W_true[0] = W[0]
+    #W_true[0] = W[0]
 
     expected_true_phi = [] # 25 * 4
     for w in W_true:
@@ -188,7 +193,11 @@ if __name__ == "__main__":
         rewards = cell_type @ w
         state_trans_prob = lavaland.get_state_trans_mat()
         policy = value_iteration(state_trans_prob, rewards, gamma, error=0.01)
+        temp2 = np.reshape(policy, (10, 10))
+        temp2 = np.transpose(temp2)
         expected_true_phi_w = compute_state_visition_freq(state_trans_prob, gamma, path_trajectories, policy)
+        temp = np.reshape(expected_true_phi_w, (10, 10))
+        temp = np.transpose(temp)
         expected_true_phi_w = np.multiply(expected_true_phi_w, state_freq)
         expected_true_phi_w = np.tile(expected_true_phi_w, (1, 4))
         expected_true_phi_w = np.multiply(cell_type, expected_true_phi_w)
