@@ -19,6 +19,7 @@ class Lavaland_spec:
             return self.sub2ind(row_idx-1, col_idx) #cell below the current cell
         elif row_idx < self.num_rows-1 and action == 1:
             return self.sub2ind(row_idx+1, col_idx) #cell above the current cell
+        return -1 #if going out of bounds
 
     # 0 = Up    1 = Down    2 = Left    3 = Right
     def get_available_action(self, row_idx, col_idx):
@@ -49,8 +50,8 @@ class Lavaland_spec:
         return state_trans_mat
 
     def sub2ind(self, row_idx, col_idx):
-        # return self.num_rows*col_idx + row_idx
-        return self.num_rows*row_idx + col_idx
+         return self.num_rows*col_idx + row_idx
+        #return self.num_rows*row_idx + col_idx
 
     def get_testing_land_type(self, row, col):
         if row>=0 and row<=4 and col>=2 and col<=8:
