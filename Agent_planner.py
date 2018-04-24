@@ -46,7 +46,7 @@ def form_ineq_mat():
                     pa_idx = pos_action_pair_2_ind(r_ind, c_ind, available_actions[a_ind])
                     ngbr_pos = lavaland.get_ngbr_pos_coord(r_ind, c_ind, available_actions[a_ind])
                     reward = rewards[ngbr_pos]
-                    linprog_eq_mat[ind, pa_idx] = -1*reward
+                    linprog_ineq_mat[ind, pa_idx] = -1*reward
         linprog_ineq_mat[ind, -1] = 1
         ind = ind + 1
     return linprog_ineq_mat
@@ -74,10 +74,14 @@ def form_eq_mat():
                 linprog_eq_mat[p_idx, pa_idx] = -gamma
     return linprog_eq_mat
 
+#convert a |S|*|S|*|A| vector into policy
+# def convert2policy(x):
+
+
 if __name__ == "__main__":
     lavaland = Lavaland_spec(10, 10, 4, 4)
-    #sampled_w = [np.array((1,-1,2,5)),np.array((4,3,1,-5)),np.array((2,-2,5,10))] #just for testing
-    sampled_w = [np.array((0.1, -10, 10, 0))]
+    sampled_w = [np.array((0.1, -10, 10, 0)),np.array((0.1, -10, 4, -5))] #just for testing
+    #sampled_w = [np.array((0.1, -10, 10, 0))]
     num_sampled_w = len(sampled_w)
     num_rows = 10
     num_cols = 10
