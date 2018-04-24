@@ -26,7 +26,7 @@ class Simple_testing_lavaland(gym.Env):
         cell_type = self.land[self.current_pos]
         cell_type = int(cell_type)
         self.traj_feature[cell_type] += 1
-        self.episode_tot_reward += self.proxy_rewards[cell_type]
+        # self.episode_tot_reward += self.proxy_rewards[cell_type]
 
         if cell_type == 2:
             done = True
@@ -37,10 +37,10 @@ class Simple_testing_lavaland(gym.Env):
         return done, self.traj_feature, self.current_pos
 
 
-    def reset(self,proxy_rewards):
-        self.proxy_rewards = proxy_rewards
+    def reset(self):
+        # self.proxy_rewards = proxy_rewards
         self.current_pos = (5, 1) # same with what's on the paper
-        self.episode_tot_reward = 0
+        # self.episode_tot_reward = 0
         num_states = 4 # dirt, grass, terminal, lava(implicit)
         self.traj_feature = np.zeros(num_states)
         return self.current_pos

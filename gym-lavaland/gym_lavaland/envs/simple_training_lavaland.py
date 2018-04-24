@@ -46,8 +46,8 @@ class Simple_training_lavaland(gym.Env):
         cell_type = self.land[self.current_pos]
         cell_type = int(cell_type)
         self.traj_feature[cell_type] += 1
-        immediateReward = self.proxy_rewards[cell_type]
-        self.episode_tot_reward += immediateReward
+        # immediateReward = self.proxy_rewards[cell_type]
+        # self.episode_tot_reward += immediateReward
         if cell_type == 2:
             done = True
         else:
@@ -55,11 +55,11 @@ class Simple_training_lavaland(gym.Env):
 
         # positionDict = {'x': self.current_pos[0], 'y': self.current_pos[1]}
         # self.printWorld()
-        return done, self.traj_feature, self.current_pos, immediateReward
+        return done, self.traj_feature, self.current_pos, None
 
 
-    def reset(self, proxy_rewards = np.array([1,1,1,1])):
-        self.proxy_rewards = proxy_rewards
+    def reset(self):
+        # self.proxy_rewards = proxy_rewards
         self.current_pos = (5, 1) # same with what's on the paper
         self.episode_tot_reward = 0
         num_states = 4 # dirt, grass, terminal, lava(implicit)

@@ -53,12 +53,12 @@ def compute_state_visition_freq(state_trans_mat, gamma, trajs, policy):
 # RETURN:
 # phi_trajectories: Phi(Epsilon)
 # path_trajectories: the actual path of each trajectory. A path ends before -1
-def generate_trajectory(w, max_step, num_traj, num_states, env):
+def generate_trajectory(max_step, num_traj, num_states, env):
     phi_trajectories = np.zeros((num_traj,num_states))
     path_trajectories = []#np.ones((num_traj,max_step))*-1
     state_freq = np.zeros((100,1))
     for eps in range(num_traj):
-        pos = env.reset(w)
+        pos = env.reset()
         pos_idx = sub2ind(pos[0], pos[1])
         eps_trajectory = [pos_idx]
         state_freq[pos_idx] += 1
@@ -109,9 +109,9 @@ def value_iteration(state_trans_prob, rewards, gamma, error):
     num_actions = 4
     values = np.zeros([num_cells])
 
+    # print(state_trans_prob[0][1])
     while True:
         values_tmp = copy.deepcopy(values)
-
         for s in range(num_cells):
             values[s] = max([sum([state_trans_prob[s, s1, a]*(rewards[s] + gamma*values_tmp[s1]) for s1 in range(num_cells)]) for a in range(num_actions)])
 
@@ -139,19 +139,21 @@ def value_iteration(state_trans_prob, rewards, gamma, error):
 
 def sub2ind(row_idx, col_idx):
     num_rows = 10
-    return num_rows*col_idx + row_idx
+    return num_rows * row_idx + col_idx
+    # return num_rows*col_idx + row_idx
 
 if __name__ == "__main__":
 
     # training (proxy)
     env = gym.make('Simple_training_lavaland-v0')
-    phi_trajectories, path_trajectories, state_freq = generate_trajectory(np.array([1,1,1,1]), max_step, num_traj, num_states, env)
+    phi_trajectories, path_trajectories, state_freq = generate_trajectory(max_step, num_traj, num_states, env)
     state_freq = state_freq/num_traj
     W = np.random.randint(-10,10,(num_proxy_rewards, num_states))
 
     expected_telda_phi = [] # 1 * 4
+    # W[0] = np.array((0.1, -10, 10, 0))
+    W[0] = np.array((5, -5, 10, 0))
     for w in W:
-        w = np.array((0.1, -10, 10, 0))
         w = w.reshape((num_states,1))
         cell_type = lavaland.form_rewards(w)
         rewards = cell_type@w

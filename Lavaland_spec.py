@@ -49,7 +49,8 @@ class Lavaland_spec:
         return state_trans_mat
 
     def sub2ind(self, row_idx, col_idx):
-        return self.num_rows*col_idx + row_idx
+        # return self.num_rows*col_idx + row_idx
+        return self.num_rows*row_idx + col_idx
 
     def get_testing_land_type(self, row, col):
         if row>=0 and row<=4 and col>=2 and col<=8:
