@@ -49,6 +49,8 @@ def form_ineq_mat():
                     linprog_ineq_mat[ind, pa_idx] = -1*reward
         linprog_ineq_mat[ind, -1] = 1
         ind = ind + 1
+    initial_state_pos = pos_action_pair_2_ind(5,1,0)
+    linprog_ineq_mat[0:num_sampled_w, initial_state_pos:initial_state_pos+num_actions] = 0
     return linprog_ineq_mat
 
 def form_eq_vec():
@@ -93,7 +95,8 @@ def convert2policy(x):
 
 if __name__ == "__main__":
     lavaland = Lavaland_spec(10, 10, 4, 4)
-    sampled_w = [np.array((5, -10, 10, 0)),np.array((5, -10, 10, -5)), np.array((5, -10, 10, 10)),np.array((5, -10, 10, -10)),] #just for testing
+    #sampled_w = [np.array((0.1, -10, 10, 0)),np.array((0.1, -10, 10, -5)), np.array((0.1, -10, 10, 10)),np.array((0.1, -10, 10, -10)),] #just for testing
+    sampled_w = [np.array((0.1, 0.1, 10, -10))]
     #sampled_w = [np.array((0.1, -10, 10, 0))]
     num_sampled_w = len(sampled_w)
     num_rows = 10

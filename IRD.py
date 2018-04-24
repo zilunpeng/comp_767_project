@@ -4,7 +4,6 @@ import numpy as np
 from Lavaland_spec import Lavaland_spec
 import random
 import copy
-from itertools import product
 
 num_states = 4
 max_step = 100
@@ -64,6 +63,7 @@ def generate_trajectory(max_step, num_traj, num_states, env):
     phi_trajectories = np.zeros((num_traj,num_states))
     path_trajectories = []#np.ones((num_traj,max_step))*-1
     state_freq = np.zeros((100,1))
+    tot_steps = 0
     for eps in range(num_traj):
         pos = env.reset()
         pos_idx = sub2ind(pos[0], pos[1])
@@ -75,6 +75,7 @@ def generate_trajectory(max_step, num_traj, num_states, env):
             pos_idx = sub2ind(pos[0], pos[1])
             eps_trajectory.append(pos_idx)
             state_freq[pos_idx] += 1
+            tot_steps += 1
             if done:
                 break
         path_trajectories.append(eps_trajectory)
@@ -85,6 +86,7 @@ def generate_trajectory(max_step, num_traj, num_states, env):
 
         phi_trajectories[eps,:] = np.true_divide(phi_epsilon, (step+1)) #taking the average so that features are on the same scale
         # print("phi_trajectories[{},:] = {}".format(eps, phi_trajectories[eps,:]))
+    state_freq = np.true_divide(state_freq, tot_steps)
     return phi_trajectories, path_trajectories, state_freq
 
 # Calculate the distribution over trajectories (Section 4.1 of the paper)
@@ -151,13 +153,13 @@ if __name__ == "__main__":
     # training (proxy)
     env = gym.make('Simple_training_lavaland-v0')
     phi_trajectories, path_trajectories, state_freq = generate_trajectory(max_step, num_traj, num_states, env)
-    state_freq = state_freq/num_traj
+    #state_freq = state_freq/num_traj
     W = np.random.randint(-10,10,(num_proxy_rewards, num_states))
 
     expected_telda_phi = [] # 1 * 4
-    # W[0] = np.array((0.1, -10, 10, 0))
-    #W[0] = np.array((5, -5, 10, 0))
-    W[0] = np.array((0.1, -0.2, 1, 0))
+    #W[0] = np.array((0.1, -10, 10, 0))
+    W[0] = np.array((1, -5, 5, 0))
+    #W[0] = np.array((0.1, -0.2, 1, 0))
     for w in W:
         w = w.reshape((num_states,1))
         cell_type = lavaland.form_rewards(w)
@@ -175,8 +177,6 @@ if __name__ == "__main__":
         expected_telda_phi_w = np.tile(expected_telda_phi_w, (1,4))
         expected_telda_phi_w = np.multiply(cell_type, expected_telda_phi_w)
         expected_telda_phi_w = np.sum(expected_telda_phi_w, axis=0)
-        # traj_prob_dist = calc_traj_prob(w.reshape((1, num_states)), phi_trajectories.reshape((num_states, num_traj)))
-        # expected_telda_phi_w = calc_expected_phi(phi_trajectories, traj_prob_dist)
         expected_telda_phi.append(expected_telda_phi_w)
 
     # testing: input 1*4 -> 1*25
@@ -202,8 +202,6 @@ if __name__ == "__main__":
         expected_true_phi_w = np.tile(expected_true_phi_w, (1, 4))
         expected_true_phi_w = np.multiply(cell_type, expected_true_phi_w)
         expected_true_phi_w = np.sum(expected_true_phi_w, axis=0)
-        # traj_prob_dist = calc_traj_prob(w.reshape((1, num_states)), phi_true_trajectories.reshape((num_states, num_traj)))
-        # expected_true_phi_w = calc_expected_phi(phi_true_trajectories, traj_prob_dist)
         expected_true_phi.append(expected_true_phi_w)
 
     # calculate posterior for each possible true_w:
@@ -212,7 +210,7 @@ if __name__ == "__main__":
     posteriors = []
     store_z = []
     for idx, w_true in enumerate(W_true):
-        expected_true_reward = np.dot(w_true.reshape((1, num_states)), np.asarray(expected_telda_phi).reshape((num_states, num_proxy_rewards)))
+        expected_true_reward = np.dot(expected_telda_phi_w , w_true)
         numerator = np.exp(beta * expected_true_reward)
         z_w_true = calc_Z_approx_bayes_w(expected_true_phi, idx, w_true, beta)
         store_z.append(z_w_true)
