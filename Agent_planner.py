@@ -1,6 +1,8 @@
 from Lavaland_spec import Lavaland_spec
 import numpy as np
 from scipy.optimize import linprog
+from IRD import IRD
+from baseline import Baseline
 
 def get_opposite_action(action):
     if action==0:
@@ -36,7 +38,8 @@ def form_ineq_mat():
     linprog_ineq_mat = np.zeros((num_sampled_w, num_cells*num_actions + 1))
     ind = 0
     for w in sampled_w:
-        w = w.reshape((4,1))
+        # print(w)
+        w = np.asarray(w).reshape((4,1))
         cell_type = lavaland.form_testing_rewards(w)
         rewards = cell_type @ w
         for r_ind in range(num_rows):
@@ -76,8 +79,11 @@ def form_eq_mat():
                 linprog_eq_mat[p_idx, pa_idx] = -gamma
     return linprog_eq_mat
 
-#convert a |S|*|S|*|A| vector into policy
-#return -1 if there is no action with > 0 probability
+
+'''
+convert a |S|*|S|*|A| vector into policy
+return -1 if there is no action with > 0 probability
+'''
 def convert2policy(x):
     x = x['x']
     policy = np.zeros((num_rows, num_cols))
@@ -93,27 +99,90 @@ def convert2policy(x):
     return policy
 
 
+def policy_leads_to_lava(lavaland, policy):
+    position = 51
+    pos_x, pos_y = ind2sub(position)
+    for _ in range(100): # max traj length = 100
+        action = policy[pos_x][pos_y]
+        if action == -1:
+            action = np.random.randint(4)
+        position = lavaland.get_ngbr_pos_coord(pos_x, pos_y, action)
+        pos_x, pos_y = ind2sub(position)
+        terrain = lavaland.get_testing_land_type(pos_x, pos_y)
+        if terrain == 3: #hit laba
+            return True
+    return False
+
+
 if __name__ == "__main__":
-    lavaland = Lavaland_spec(10, 10, 4, 4)
-    #sampled_w = [np.array((0.1, -10, 10, 0)),np.array((0.1, -10, 10, -5)), np.array((0.1, -10, 10, 10)),np.array((0.1, -10, 10, -10)),] #just for testing
-    sampled_w = [np.array((0.1, 0.1, 10, -10))]
-    #sampled_w = [np.array((0.1, -10, 10, 0))]
-    num_sampled_w = len(sampled_w)
-    num_rows = 10
-    num_cols = 10
-    num_cells = num_rows * num_cols
-    num_actions = 4
-    gamma = 0.9
-    linprog_eq_mat = form_eq_mat()
-    linprog_eq_vec = form_eq_vec()
-    linprog_ineq_mat = form_ineq_mat()
-    linprog_ineq_vec = form_ineq_vec()
 
-    c = np.zeros(num_cells*num_actions+1)
-    c[-1] = -1
+    # sampled_w = [np.array((0.1, -10, 10, 0)),np.array((0.1, -10, 10, -5)), np.array((0.1, -10, 10, 10)),np.array((0.1, -10, 10, -10)),] #just for testing
+    # sampled_w = [np.array((0.1, 0.1, 10, -10))]
+    # sampled_w = [np.array((1, -5, 5, 0))]
 
-    bounds = form_bounds()
+    hit_lava_baseline_policy = []
 
-    x = linprog(c, A_ub=linprog_ineq_mat, b_ub=linprog_ineq_vec, A_eq=linprog_eq_mat, b_eq=linprog_eq_vec, bounds=bounds, options={"disp": True})
-    policy = convert2policy(x)
-    print(x)
+    hit_lava_proxy_w_list = []
+    hit_lava_sampled_w_list = []
+    hit_lava_policy_list = []
+    experiment_num = 100
+
+    for _ in range(experiment_num):
+        dirt_w = np.random.randint(1, 6)
+        grass_w = np.random.randint(-10, 0)
+        terminal_w = np.random.randint(6, 10)
+        design_weight = np.array([dirt_w, grass_w, terminal_w, 0])
+
+        ird = IRD()
+        posterior, true_W = ird.run_ird(design_weight)
+
+        # sample few candidate true_weight from posterior
+
+        print(true_W)
+        num = true_W.shape[0]
+        # true_W.reshape((num, 4))
+        # sample_space = true_W.tolist()
+        # print(sample_space)
+        num_sampled_w = 10
+        pos = np.divide(posterior, posterior.sum())
+        sampled_w_indices = np.random.choice(num, num_sampled_w, p=pos)
+        sampled_w = true_W[sampled_w_indices].tolist()
+        # sampled_w = [true_W[sampled_w_indices]]
+
+        lavaland = Lavaland_spec(10, 10, 4, 4)
+        num_rows = 10
+        num_cols = 10
+        num_cells = num_rows * num_cols
+        num_actions = 4
+        gamma = 0.9
+        linprog_eq_mat = form_eq_mat()
+        linprog_eq_vec = form_eq_vec()
+        linprog_ineq_mat = form_ineq_mat()
+        linprog_ineq_vec = form_ineq_vec()
+
+        c = np.zeros(num_cells*num_actions+1)
+        c[-1] = -1
+
+        bounds = form_bounds()
+
+        x = linprog(c, A_ub=linprog_ineq_mat, b_ub=linprog_ineq_vec, A_eq=linprog_eq_mat, b_eq=linprog_eq_vec, bounds=bounds, options={"disp": True})
+        policy = convert2policy(x)
+        print(policy)
+        # print(x)
+
+        if policy_leads_to_lava(lavaland, policy):
+            hit_lava_proxy_w_list.append(design_weight)
+            hit_lava_sampled_w_list = [sampled_w]
+            hit_lava_policy_list = [policy]
+
+        # start to run baseline
+        # baseline_agent = Baseline()
+        # baseline_policy = baseline_agent.agent_learn(design_weight)
+        # if policy_leads_to_lava(lavaland, baseline_policy):
+        #     hit_lava_baseline_policy.append(baseline_policy)
+
+    ratio_hit_traj = len(hit_lava_policy_list)/experiment_num
+    # ratio_hit_traj_baseline = len(hit_lava_baseline_policy)/experiment_num
+    # print(ratio_hit_traj, ratio_hit_traj_baseline)
+    print(ratio_hit_traj)
+    print("-------------the end-------------")

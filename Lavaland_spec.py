@@ -53,12 +53,23 @@ class Lavaland_spec:
          return self.num_rows*col_idx + row_idx
         #return self.num_rows*row_idx + col_idx
 
+    # def get_testing_land_type(self, row, col):
+    #     if row>=0 and row<=4 and col>=2 and col<=8:
+    #         return 1
+    #     if row>=4 and row<=7 and col>=3 and col<=7:
+    #         return 3
+    #     if row>=7 and row<=10 and col>=4 and col<=6:
+    #         return 1
+    #     if row==5 and col==8:
+    #         return 2
+    #     return 0
+
     def get_testing_land_type(self, row, col):
-        if row>=0 and row<=4 and col>=2 and col<=8:
+        if row>=0 and row<=3 and col>=2 and col<=7:
             return 1
-        if row>=4 and row<=7 and col>=3 and col<=7:
+        if row>=4 and row<=6 and col>=3 and col<=6:
             return 3
-        if row>=7 and row<=10 and col>=4 and col<=6:
+        if row>=7 and row<=9 and col>=4 and col<=5:
             return 1
         if row==5 and col==8:
             return 2
