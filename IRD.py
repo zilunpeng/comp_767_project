@@ -7,7 +7,7 @@ import copy
 
 num_states = 4
 max_step = 100
-num_traj = 50
+num_traj = 1000
 num_proxy_rewards = 1
 beta = 1
 gamma = 0.9
@@ -63,7 +63,7 @@ def generate_trajectory(max_step, num_traj, num_states, env):
     phi_trajectories = np.zeros((num_traj,num_states))
     path_trajectories = []#np.ones((num_traj,max_step))*-1
     state_freq = np.zeros((100,1))
-    tot_steps = 0
+    #tot_steps = 0
     for eps in range(num_traj):
         pos = env.reset()
         pos_idx = sub2ind(pos[0], pos[1])
@@ -75,7 +75,7 @@ def generate_trajectory(max_step, num_traj, num_states, env):
             pos_idx = sub2ind(pos[0], pos[1])
             eps_trajectory.append(pos_idx)
             state_freq[pos_idx] += 1
-            tot_steps += 1
+            #tot_steps += 1
             if done:
                 break
         path_trajectories.append(eps_trajectory)
@@ -86,7 +86,7 @@ def generate_trajectory(max_step, num_traj, num_states, env):
 
         phi_trajectories[eps,:] = np.true_divide(phi_epsilon, (step+1)) #taking the average so that features are on the same scale
         # print("phi_trajectories[{},:] = {}".format(eps, phi_trajectories[eps,:]))
-    state_freq = np.true_divide(state_freq, tot_steps)
+    #state_freq = np.true_divide(state_freq, tot_steps)
     return phi_trajectories, path_trajectories, state_freq
 
 # Calculate the distribution over trajectories (Section 4.1 of the paper)
@@ -153,7 +153,7 @@ if __name__ == "__main__":
     # training (proxy)
     env = gym.make('Simple_training_lavaland-v0')
     phi_trajectories, path_trajectories, state_freq = generate_trajectory(max_step, num_traj, num_states, env)
-    #state_freq = state_freq/num_traj
+    state_freq = state_freq/num_traj
     W = np.random.randint(-10,10,(num_proxy_rewards, num_states))
 
     expected_telda_phi = [] # 1 * 4
@@ -180,10 +180,10 @@ if __name__ == "__main__":
         expected_telda_phi.append(expected_telda_phi_w)
 
     # testing: input 1*4 -> 1*25
-    num_true_rewards = 10
+    num_true_rewards = 20
     #phi_true_trajectories, path_true_trajectories = generate_trajectory(np.array([1,1,1,1]), max_step, num_traj, num_states, env)
     phi_true_trajectories = phi_trajectories
-    W_true = np.random.randint(-10,10,(num_true_rewards, num_states))
+    W_true = np.random.randint(-5,5,(num_true_rewards, num_states))
     #W_true[0] = W[0]
 
     expected_true_phi = [] # 25 * 4
