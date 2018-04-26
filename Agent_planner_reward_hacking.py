@@ -161,12 +161,12 @@ if __name__ == "__main__":
     hit_lava_policy_list = []
     experiment_num = 100
 
-    w_true = np.random.randint(-10, 10, (10, 4))
+    w_true = np.random.randint(0, 20, (10, 4))
     ird = IRD()
 
     for _ in range(experiment_num):
         #design_weight = np.array(np.random.randint(-10, 10, (1, 4))).flatten()
-        design_weight = np.array((1, -3, 5, 0))
+        design_weight = np.array((1, 0, 10, 0))
         # design_weight[3] = 0
 
         print("using proxy weight: ", design_weight)

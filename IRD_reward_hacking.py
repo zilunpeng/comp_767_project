@@ -64,7 +64,7 @@ class IRD_reward_hacking:
                     tot_steps += 1
                     if done:
                         break
-            # state_freq = np.true_divide(state_freq, self.num_traj)
+            state_freq = np.true_divide(state_freq, self.num_traj)
             # land_type_counter = np.true_divide(land_type_counter, self.num_traj)
             return state_freq, land_type_counter
 
@@ -139,7 +139,7 @@ class IRD_reward_hacking:
                                                 for s1 in range(num_cells)])
                                            for a in range(num_actions)])
 
-                return policy
+                return values, policy
             else:
                 # generate stochastic policy
                 policy = np.zeros([num_cells, num_actions])
@@ -148,7 +148,7 @@ class IRD_reward_hacking:
                         [sum([state_trans_prob[s, s1, a] * (rewards[s] + self.gamma * values[s1]) for s1 in range(num_cells)]) for a in
                          range(num_actions)])
                     policy[s, :] = np.transpose(v_s / np.sum(v_s))
-                return policy
+                return values, policy
 
         # run_ird code starts from here
         env = gym.make('Simple_training_lavaland-v0')
@@ -157,7 +157,7 @@ class IRD_reward_hacking:
         cell_type = self.lavaland.form_rewards(w)
         rewards = cell_type @ w
         state_trans_prob = self.lavaland.get_state_trans_mat()
-        policy = value_iteration(state_trans_prob, rewards, deterministic=False)
+        values, policy = value_iteration(state_trans_prob, rewards, deterministic=False)
         state_freq, land_type_counter = generate_trajectory_from_policy(env, policy, deterministic=False)
         # temp = np.reshape(state_freq, (10,10))
         # temp = np.transpose(temp)
@@ -178,8 +178,11 @@ class IRD_reward_hacking:
                 cell_type = self.lavaland.form_rewards(w)
                 rewards = cell_type @ w
                 state_trans_prob = self.lavaland.get_state_trans_mat()
-                policy = value_iteration(state_trans_prob, rewards, deterministic=False)
-                state_freq, land_type_counter = generate_trajectory_from_policy(env, policy, deterministic=False)
+                values, policy = value_iteration(state_trans_prob, rewards, deterministic=False)
+                try:
+                    state_freq, land_type_counter = generate_trajectory_from_policy(env, policy, deterministic=False)
+                except:
+                    print('negative probabilities')
                 expected_true_phi_w = compute_state_visition_freq(state_trans_prob, policy, deterministic=False)
                 expected_true_phi_w = np.multiply(state_freq, expected_true_phi_w)
                 expected_true_phi_w = np.tile(expected_true_phi_w, (1, 4))
