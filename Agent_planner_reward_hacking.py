@@ -161,7 +161,7 @@ if __name__ == "__main__":
     hit_lava_policy_list = []
     experiment_num = 200
 
-    w_true = np.random.randint(-10, 10, (100, 4))
+    w_true = np.random.randint(-10, 10, (50, 4))
     ird = IRD()
 
     for _ in range(experiment_num):
@@ -180,7 +180,7 @@ if __name__ == "__main__":
         # true_W.reshape((num, 4))
         # sample_space = true_W.tolist()
         # print(sample_space)
-        num_sampled_w = 10
+        num_sampled_w = 7
         pos = np.divide(posterior, posterior.sum())
         sampled_w_indices = np.random.choice(num, num_sampled_w, p=pos)
         sampled_w = true_W[sampled_w_indices].tolist()
@@ -201,7 +201,12 @@ if __name__ == "__main__":
 
         bounds = form_bounds()
 
-        x = linprog(c, A_ub=linprog_ineq_mat, b_ub=linprog_ineq_vec, A_eq=linprog_eq_mat, b_eq=linprog_eq_vec, bounds=bounds, options={"disp": True})
+        try:
+            x = linprog(c, A_ub=linprog_ineq_mat, b_ub=linprog_ineq_vec, A_eq=linprog_eq_mat, b_eq=linprog_eq_vec, bounds=bounds, options={"disp": True})
+        except:
+            print('feasible point problem')
+            continue
+
         policy = convert2policy(x)
         print(policy)
         # print(x)
