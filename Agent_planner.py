@@ -167,7 +167,8 @@ if __name__ == "__main__":
         # dirt_w = np.random.randint(1, 6)
         # grass_w = np.random.randint(-10, 0)
         # terminal_w = np.random.randint(6, 10)
-        # design_weight = np.array([dirt_w, grass_w, terminal_w, 0])
+        # unknown_w = np.random.randint(-100, 100)
+        # design_weight = np.array([dirt_w, grass_w, terminal_w, unknown_w])
 
         design_weight = np.array(np.random.randint(-10, 10, (1, 4))).flatten()
         # design_weight = np.array((-2, 7, 3, 0))
