@@ -32,8 +32,11 @@ def form_bounds():
     bounds.append((None, None))
     return bounds
 
-def form_ineq_vec():
-    return np.zeros((num_sampled_w, 1))
+def form_ineq_vec(expected_telda_phi_w):
+    vec = np.zeros((num_sampled_w, 1))
+    for w_ind in range(len(sampled_w)):
+        vec[w_ind] = -np.dot(sampled_w[w_ind], expected_telda_phi_w)
+    return vec
 
 def form_ineq_mat():
     linprog_ineq_mat = np.zeros((num_sampled_w, num_cells*num_actions + 1))
@@ -53,8 +56,8 @@ def form_ineq_mat():
                     linprog_ineq_mat[ind, pa_idx] = -1*reward
         linprog_ineq_mat[ind, -1] = 1
         ind = ind + 1
-    initial_state_pos = pos_action_pair_2_ind(5,1,0)
-    linprog_ineq_mat[0:num_sampled_w, initial_state_pos:initial_state_pos+num_actions] = 0
+    # initial_state_pos = pos_action_pair_2_ind(5,1,0)
+    # linprog_ineq_mat[0:num_sampled_w, initial_state_pos:initial_state_pos+num_actions] = 0
     return linprog_ineq_mat
 
 def form_eq_vec():
@@ -161,17 +164,17 @@ if __name__ == "__main__":
     hit_lava_policy_list = []
     experiment_num = 100
 
-    w_true = np.random.randint(0, 20, (10, 4))
+    w_true = np.random.randint(-10, 10, (50, 4))
     ird = IRD()
 
     for _ in range(experiment_num):
-        #design_weight = np.array(np.random.randint(-10, 10, (1, 4))).flatten()
-        design_weight = np.array((1, 0, 10, 0))
+        design_weight = np.array(np.random.randint(-10, 10, (1, 4))).flatten()
+        #design_weight = np.array((1, 0, 10, 0))
         # design_weight[3] = 0
 
         print("using proxy weight: ", design_weight)
 
-        posterior, true_W = ird.run_ird(design_weight, w_true)
+        posterior, true_W, expected_telda_phi_w = ird.run_ird(design_weight, w_true)
 
         # sample few candidate true_weight from posterior
 
@@ -194,7 +197,7 @@ if __name__ == "__main__":
         linprog_eq_mat = form_eq_mat()
         linprog_eq_vec = form_eq_vec()
         linprog_ineq_mat = form_ineq_mat()
-        linprog_ineq_vec = form_ineq_vec()
+        linprog_ineq_vec = form_ineq_vec(expected_telda_phi_w)
 
         c = np.zeros(num_cells*num_actions+1)
         c[-1] = -1
