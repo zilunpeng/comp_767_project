@@ -3,6 +3,7 @@ import numpy as np
 from scipy.optimize import linprog
 from IRD import IRD
 from baseline import Baseline
+from value_iteration import VI
 
 def get_opposite_action(action):
     if action==0:
@@ -101,20 +102,53 @@ def convert2policy(x):
 
 def policy_leads_to_lava(lavaland, policy):
     position = 51
-    pos_x, pos_y = ind2sub(position)
+    # pos_x, pos_y = ind2sub(position)
+    pos_x, pos_y = num_to_coord(position)
     for _ in range(100): # max traj length = 100
         action = policy[pos_x][pos_y]
         if action == -1:
             action = np.random.randint(4)
-        position = lavaland.get_ngbr_pos_coord(pos_x, pos_y, action)
-        pos_x, pos_y = ind2sub(position)
+        pos_x, pos_y = lavaland.get_next_state(pos_x, pos_y, action)
         terrain = lavaland.get_testing_land_type(pos_x, pos_y)
         if terrain == 3: #hit laba
             return True
     return False
 
+def num_to_coord(num):
+    r, c = num // 10, num % 10
+    return (r, c)
+
+
+def coord_To_Num(coord):
+    r, c = coord[0], coord[1]
+    return r * 10 + c  # num from 0 to 99
+
+
+def baseline_policy_leads_to_lava(lavaland, policy):
+    position = 51
+    # pos_x, pos_y = ind2sub(position)
+    pos_x, pos_y = num_to_coord(position)
+    for _ in range(100): # max traj length = 100
+        action = policy[pos_x][pos_y]
+        pos_x, pos_y = lavaland.get_next_state(pos_x, pos_y, action)
+        if pos_x < 0:
+            return False
+        terrain = lavaland.get_testing_land_type(pos_x, pos_y)
+        if terrain == 3: #hit laba
+            return True
+    return False
 
 if __name__ == "__main__":
+
+    # baseline_agent = VI()
+    # baseline_policy = baseline_agent.value_iteration(np.array((-2, 7, 3, 0)))
+    # temp_baseline_policy = np.reshape(baseline_policy, (10, 10))
+    # temp_baseline_policy = np.transpose(temp_baseline_policy)
+    # print("--------baseline policy--------")
+    # print(temp_baseline_policy)
+    # lavaland = Lavaland_spec(10, 10, 4, 4)
+    # hit_lava = baseline_policy_leads_to_lava(lavaland, temp_baseline_policy)
+    # print(hit_lava)
 
     # sampled_w = [np.array((0.1, -10, 10, 0)),np.array((0.1, -10, 10, -5)), np.array((0.1, -10, 10, 10)),np.array((0.1, -10, 10, -10)),] #just for testing
     # sampled_w = [np.array((0.1, 0.1, 10, -10))]
@@ -125,16 +159,23 @@ if __name__ == "__main__":
     hit_lava_proxy_w_list = []
     hit_lava_sampled_w_list = []
     hit_lava_policy_list = []
-    experiment_num = 100
+    experiment_num = 30
+
+    w_true = np.random.randint(-5, 5, (20, 4))
 
     for _ in range(experiment_num):
-        dirt_w = np.random.randint(1, 6)
-        grass_w = np.random.randint(-10, 0)
-        terminal_w = np.random.randint(6, 10)
-        design_weight = np.array([dirt_w, grass_w, terminal_w, 0])
+        # dirt_w = np.random.randint(1, 6)
+        # grass_w = np.random.randint(-10, 0)
+        # terminal_w = np.random.randint(6, 10)
+        # design_weight = np.array([dirt_w, grass_w, terminal_w, 0])
 
+        design_weight = np.array(np.random.randint(-10, 10, (1, 4))).flatten()
+        # design_weight = np.array((-2, 7, 3, 0))
+        # design_weight[3] = 0
+
+        print("using proxy weight: ", design_weight)
         ird = IRD()
-        posterior, true_W = ird.run_ird(design_weight)
+        posterior, true_W = ird.run_ird(design_weight, w_true)
 
         # sample few candidate true_weight from posterior
 
@@ -143,11 +184,10 @@ if __name__ == "__main__":
         # true_W.reshape((num, 4))
         # sample_space = true_W.tolist()
         # print(sample_space)
-        num_sampled_w = 10
+        num_sampled_w = 5
         pos = np.divide(posterior, posterior.sum())
         sampled_w_indices = np.random.choice(num, num_sampled_w, p=pos)
         sampled_w = true_W[sampled_w_indices].tolist()
-        # sampled_w = [true_W[sampled_w_indices]]
 
         lavaland = Lavaland_spec(10, 10, 4, 4)
         num_rows = 10
@@ -172,8 +212,9 @@ if __name__ == "__main__":
 
         if policy_leads_to_lava(lavaland, policy):
             hit_lava_proxy_w_list.append(design_weight)
-            hit_lava_sampled_w_list = [sampled_w]
-            hit_lava_policy_list = [policy]
+            hit_lava_sampled_w_list.append(sampled_w)
+            hit_lava_policy_list.append(policy)
+            print("IRD hit lava, [{}]/[{}]".format(len(hit_lava_policy_list), experiment_num))
 
         # start to run baseline
         # baseline_agent = Baseline()
@@ -181,8 +222,30 @@ if __name__ == "__main__":
         # if policy_leads_to_lava(lavaland, baseline_policy):
         #     hit_lava_baseline_policy.append(baseline_policy)
 
+        baseline_agent = VI()
+        baseline_policy = baseline_agent.value_iteration(design_weight)
+        temp_baseline_policy = np.reshape(baseline_policy, (10, 10))
+        temp_baseline_policy = np.transpose(temp_baseline_policy)
+        print("--------baseline policy--------")
+        print(temp_baseline_policy)
+        if baseline_policy_leads_to_lava(lavaland, temp_baseline_policy):
+            hit_lava_baseline_policy.append(temp_baseline_policy)
+            print("VI hit lava, [{}]/[{}]".format(len(hit_lava_baseline_policy), experiment_num))
+
     ratio_hit_traj = len(hit_lava_policy_list)/experiment_num
-    # ratio_hit_traj_baseline = len(hit_lava_baseline_policy)/experiment_num
-    # print(ratio_hit_traj, ratio_hit_traj_baseline)
-    print(ratio_hit_traj)
+    ratio_hit_traj_baseline = len(hit_lava_baseline_policy)/experiment_num
+    print(ratio_hit_traj, ratio_hit_traj_baseline)
+    # print(ratio_hit_traj)
     print("-------------the end-------------")
+
+    # file = open(“output.txt”, ”w”)
+    # hit_lava_baseline_policy = []
+    # hit_lava_proxy_w_list = []
+    # hit_lava_sampled_w_list = []
+    # hit_lava_policy_list = []
+    #
+    # file.write(hit_lava_baseline_policy)
+    # file.write(hit_lava_sampled_w_list)
+    # file.write(hit_lava_policy_list)
+    # file.write(hit_lava_proxy_w_list)
+    # file.close()

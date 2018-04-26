@@ -9,6 +9,18 @@ class Lavaland_spec:
         self.max_num_ngbrs = max_num_ngbrs
         self.num_features = num_features
 
+    def get_next_state(self, row_idx, col_idx, action):
+        if col_idx < self.num_cols-1 and action == 3:
+            return row_idx, col_idx+1 #cell to the right of the current cell
+        elif col_idx > 0 and action == 2:
+            return row_idx, col_idx - 1
+        elif row_idx > 0 and action == 0:
+            return row_idx-1, col_idx
+        elif row_idx < self.num_rows-1 and action == 1:
+            return row_idx+1, col_idx #cell above the current cell
+        return -1, -1 #if going out of bounds
+
+
     # Return the coordinates of a cell's neighbors
     def get_ngbr_pos_coord(self, row_idx, col_idx, action):
         if col_idx < self.num_cols-1 and action == 3:

@@ -17,7 +17,6 @@ def ind2sub(ind):
     return (int(ind % num_cols), int(ind / num_cols))
 
 class IRD:
-
     def __init__(self):
         self.num_states = 4
         self.max_step = 100
@@ -27,6 +26,7 @@ class IRD:
         self.gamma = 0.9
         self.error = 0.001
         self.lavaland = Lavaland_spec(10, 10, 4, 4)
+        self.w_true_expected_phi = None
 
     #
     # # Calculate the distribution over trajectories (Section 4.1 of the paper)
@@ -43,7 +43,7 @@ class IRD:
     #     expected_phi = np.multiply(phi_trajectories, np.transpose(traj_prob))
     #     return sum(expected_phi)
     #
-    def run_ird(self, proxy_weight):
+    def run_ird(self, proxy_weight, w_true=None):
 
         # h_pos = horizontal position
         # v_pos = vertical position
@@ -170,6 +170,7 @@ class IRD:
         temp2 = np.reshape(rewards, (10, 10))
         temp2 = np.transpose(temp2)
         state_trans_prob = self.lavaland.get_state_trans_mat()
+
         policy = value_iteration(state_trans_prob, rewards)
         temp2 = np.reshape(policy, (10, 10))
         temp2 = np.transpose(temp2)
@@ -184,37 +185,42 @@ class IRD:
 
         # testing: input 1*4 -> 1*25
         num_true_rewards = 20
-        # phi_true_trajectories, path_true_trajectories = generate_trajectory(np.array([1,1,1,1]), max_step, num_traj, num_states, env)
-        phi_true_trajectories = phi_trajectories
-        W_true = np.random.randint(-5, 5, (num_true_rewards, self.num_states))
-        # W_true[0] = W[0]
+        # # phi_true_trajectories, path_true_trajectories = generate_trajectory(np.array([1,1,1,1]), max_step, num_traj, num_states, env)
+        # phi_true_trajectories = phi_trajectories
 
-        expected_true_phi = []  # 25 * 4
-        for w in W_true:
-            w = w.reshape((self.num_states, 1))
-            cell_type = self.lavaland.form_rewards(w)
-            rewards = cell_type @ w
-            state_trans_prob = self.lavaland.get_state_trans_mat()
-            policy = value_iteration(state_trans_prob, rewards)
-            temp2 = np.reshape(policy, (10, 10))
-            temp2 = np.transpose(temp2)
-            expected_true_phi_w = compute_state_visition_freq(state_trans_prob, policy)
-            temp = np.reshape(expected_true_phi_w, (10, 10))
-            temp = np.transpose(temp)
-            expected_true_phi_w = np.multiply(expected_true_phi_w, state_freq)
-            expected_true_phi_w = np.tile(expected_true_phi_w, (1, 4))
-            expected_true_phi_w = np.multiply(cell_type, expected_true_phi_w)
-            expected_true_phi_w = np.sum(expected_true_phi_w, axis=0)
-            expected_true_phi.append(expected_true_phi_w)
+        if w_true is None:
+            w_true = np.random.randint(-5, 5, (num_true_rewards, self.num_states))
+
+        if self.w_true_expected_phi is not None:
+            expected_true_phi = self.w_true_expected_phi
+        else:
+            expected_true_phi = []  # num_true_rewards * 4
+            for w in w_true:
+                w = w.reshape((self.num_states, 1))
+                cell_type = self.lavaland.form_rewards(w)
+                rewards = cell_type @ w
+                state_trans_prob = self.lavaland.get_state_trans_mat()
+                policy = value_iteration(state_trans_prob, rewards)
+                temp2 = np.reshape(policy, (10, 10))
+                temp2 = np.transpose(temp2)
+                expected_true_phi_w = compute_state_visition_freq(state_trans_prob, policy)
+                temp = np.reshape(expected_true_phi_w, (10, 10))
+                temp = np.transpose(temp)
+                expected_true_phi_w = np.multiply(expected_true_phi_w, state_freq)
+                expected_true_phi_w = np.tile(expected_true_phi_w, (1, 4))
+                expected_true_phi_w = np.multiply(cell_type, expected_true_phi_w)
+                expected_true_phi_w = np.sum(expected_true_phi_w, axis=0)
+                expected_true_phi.append(expected_true_phi_w)
+            self.w_true_expected_phi = expected_true_phi
 
         # calculate posterior for each possible true_w:
         # input w_telda 1*4, output posterior 1 * 25
         posteriors = []
         store_z = []
-        for idx, w_true in enumerate(W_true):
-            expected_true_reward = np.dot(expected_telda_phi_w, w_true)
+        for idx, each_w in enumerate(w_true):
+            expected_true_reward = np.dot(expected_telda_phi_w, each_w)
             numerator = np.exp(self.beta * expected_true_reward)
-            z_w_true = calc_Z_approx_bayes_w(expected_true_phi, idx, w_true)
+            z_w_true = calc_Z_approx_bayes_w(expected_true_phi, idx, each_w)
             store_z.append(z_w_true)
             likelihood = np.true_divide(numerator, z_w_true)
             post = likelihood
@@ -227,7 +233,7 @@ class IRD:
         print(np.divide(posteriors, posteriors.sum()))
         print(posteriors.max())
 
-        return posteriors, W_true
+        return posteriors, w_true
 
 
 # if __name__ == "__main__":
