@@ -159,9 +159,10 @@ if __name__ == "__main__":
     hit_lava_proxy_w_list = []
     hit_lava_sampled_w_list = []
     hit_lava_policy_list = []
-    experiment_num = 100
+    experiment_num = 200
 
-    w_true = np.random.randint(-10, 10, (50, 4))
+    w_true = np.random.randint(-10, 10, (100, 4))
+    ird = IRD()
 
     for _ in range(experiment_num):
         design_weight = np.array(np.random.randint(-10, 10, (1, 4))).flatten()
@@ -169,12 +170,12 @@ if __name__ == "__main__":
         # design_weight[3] = 0
 
         print("using proxy weight: ", design_weight)
-        ird = IRD()
+
         posterior, true_W = ird.run_ird(design_weight, w_true)
 
         # sample few candidate true_weight from posterior
 
-        print(true_W)
+        #print(true_W)
         num = true_W.shape[0]
         # true_W.reshape((num, 4))
         # sample_space = true_W.tolist()
