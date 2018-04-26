@@ -21,7 +21,7 @@ class IRD_reward_hacking:
     def __init__(self):
         self.num_states = 4
         self.max_step = 15
-        self.num_traj = 10
+        self.num_traj = 1
         self.num_proxy_rewards = 1
         self.beta = 1
         self.gamma = 0.9
@@ -64,7 +64,7 @@ class IRD_reward_hacking:
                     tot_steps += 1
                     if done:
                         break
-            state_freq = np.true_divide(state_freq, self.num_traj)
+            #state_freq = np.true_divide(state_freq, self.num_traj)
             # land_type_counter = np.true_divide(land_type_counter, self.num_traj)
             return state_freq, land_type_counter
 
@@ -157,11 +157,11 @@ class IRD_reward_hacking:
         cell_type = self.lavaland.form_rewards(w)
         rewards = cell_type @ w
         state_trans_prob = self.lavaland.get_state_trans_mat()
-        values, policy = value_iteration(state_trans_prob, rewards, deterministic=False)
-        state_freq, land_type_counter = generate_trajectory_from_policy(env, policy, deterministic=False)
+        values, policy = value_iteration(state_trans_prob, rewards, deterministic=True)
+        state_freq, land_type_counter = generate_trajectory_from_policy(env, policy, deterministic=True)
         # temp = np.reshape(state_freq, (10,10))
         # temp = np.transpose(temp)
-        expected_telda_phi_w = compute_state_visition_freq(state_trans_prob, policy, deterministic=False)
+        expected_telda_phi_w = compute_state_visition_freq(state_trans_prob, policy, deterministic=True)
         # temp2 = np.reshape(expected_telda_phi_w, (10, 10))
         # temp2= np.transpose(temp2)
         expected_telda_phi_w = np.multiply(state_freq, expected_telda_phi_w)
@@ -178,12 +178,9 @@ class IRD_reward_hacking:
                 cell_type = self.lavaland.form_rewards(w)
                 rewards = cell_type @ w
                 state_trans_prob = self.lavaland.get_state_trans_mat()
-                values, policy = value_iteration(state_trans_prob, rewards, deterministic=False)
-                try:
-                    state_freq, land_type_counter = generate_trajectory_from_policy(env, policy, deterministic=False)
-                except:
-                    print('negative probabilities')
-                expected_true_phi_w = compute_state_visition_freq(state_trans_prob, policy, deterministic=False)
+                values, policy = value_iteration(state_trans_prob, rewards, deterministic=True)
+                state_freq, land_type_counter = generate_trajectory_from_policy(env, policy, deterministic=True)
+                expected_true_phi_w = compute_state_visition_freq(state_trans_prob, policy, deterministic=True)
                 expected_true_phi_w = np.multiply(state_freq, expected_true_phi_w)
                 expected_true_phi_w = np.tile(expected_true_phi_w, (1, 4))
                 expected_true_phi_w = np.multiply(cell_type, expected_true_phi_w)
@@ -212,5 +209,5 @@ class IRD_reward_hacking:
         print(np.divide(posteriors, posteriors.sum()))
         print(posteriors.max())
 
-        return posteriors, W_true
+        return posteriors, W_true, expected_telda_phi_w
 
