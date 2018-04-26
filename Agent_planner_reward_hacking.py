@@ -159,14 +159,14 @@ if __name__ == "__main__":
     hit_lava_proxy_w_list = []
     hit_lava_sampled_w_list = []
     hit_lava_policy_list = []
-    experiment_num = 200
+    experiment_num = 100
 
-    w_true = np.random.randint(-10, 10, (50, 4))
+    w_true = np.random.randint(-10, 10, (10, 4))
     ird = IRD()
 
     for _ in range(experiment_num):
-        design_weight = np.array(np.random.randint(-10, 10, (1, 4))).flatten()
-        # design_weight = np.array((-2, 7, 3, 0))
+        #design_weight = np.array(np.random.randint(-10, 10, (1, 4))).flatten()
+        design_weight = np.array((1, -3, 5, 0))
         # design_weight[3] = 0
 
         print("using proxy weight: ", design_weight)
@@ -201,10 +201,9 @@ if __name__ == "__main__":
 
         bounds = form_bounds()
 
-        try:
-            x = linprog(c, A_ub=linprog_ineq_mat, b_ub=linprog_ineq_vec, A_eq=linprog_eq_mat, b_eq=linprog_eq_vec, bounds=bounds, options={"disp": True})
-        except:
-            print('feasible point problem')
+
+        x = linprog(c, A_ub=linprog_ineq_mat, b_ub=linprog_ineq_vec, A_eq=linprog_eq_mat, b_eq=linprog_eq_vec, bounds=bounds, options={"disp": True})
+        if x.success == False:
             continue
 
         policy = convert2policy(x)

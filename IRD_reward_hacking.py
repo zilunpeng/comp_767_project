@@ -21,7 +21,7 @@ class IRD_reward_hacking:
     def __init__(self):
         self.num_states = 4
         self.max_step = 15
-        self.num_traj = 1
+        self.num_traj = 10
         self.num_proxy_rewards = 1
         self.beta = 1
         self.gamma = 0.9
@@ -77,6 +77,16 @@ class IRD_reward_hacking:
                 z_w = z_w + sum(rem)
                 return z_w
 
+        def get_opposite_action(action):
+            if action == 0:
+                return 1
+            elif action == 1:
+                return 0
+            elif action == 2:
+                return 3
+            elif action == 3:
+                return 2
+
             #  Return Nx1 vector - state visitation frequencies
         def compute_state_visition_freq(state_trans_mat, policy, deterministic):
                 N_STATES, _, N_ACTIONS = np.shape(state_trans_mat)
@@ -86,9 +96,9 @@ class IRD_reward_hacking:
                 visited_states = [sub2ind(5, 1)]
 
                 for t in range(1, self.max_step):
-                    prev_s = np.where(mu[:, t - 1] > 0)[0]
-                    (prev_s_rind, prev_s_cind) = ind2sub(prev_s)
                     if deterministic:
+                        prev_s = np.where(mu[:, t - 1] > 0)[0]
+                        (prev_s_rind, prev_s_cind) = ind2sub(prev_s)
                         s = self.lavaland.get_ngbr_pos_coord(prev_s_rind, prev_s_cind, policy[prev_s])
                         if s == -1 or prev_s == 85 or s in visited_states:  # terminal or out of bounds or cell has been visited
                             break
@@ -96,15 +106,13 @@ class IRD_reward_hacking:
                             visited_states.append(s)
                             mu[s, t] += mu[prev_s, t-1]
                     else:
-                        for a in range(3):
-                            s = self.lavaland.get_ngbr_pos_coord(prev_s_rind, prev_s_cind, a)
-                            visited_states.append(s)
-                            if s == -1 or prev_s == 85 or s in visited_states:
-                                shouldBreak = True
-                            mu[s, t] += mu[prev_s, t-1]*policy[prev_s,a]
-                        if shouldBreak:
-                            break
+                        for s in range(N_STATES):
+                            s_rind, s_cind = ind2sub(s)
+                            for a in range(N_ACTIONS):
+                                prev_s = self.lavaland.get_ngbr_pos_coord(s_rind, s_cind, a)
+                                mu[s, t] += mu[prev_s, t-1] * policy[prev_s, get_opposite_action(a)]
                 p = np.sum(mu, 1)
+                p[sub2ind(5, 1)] = 1
                 return p.reshape((N_STATES, 1))
 
         def value_iteration(state_trans_prob, rewards, deterministic):
@@ -149,13 +157,13 @@ class IRD_reward_hacking:
         cell_type = self.lavaland.form_rewards(w)
         rewards = cell_type @ w
         state_trans_prob = self.lavaland.get_state_trans_mat()
-        policy = value_iteration(state_trans_prob, rewards, deterministic=True)
-        temp2 = np.reshape(policy, (10,10))
-        temp2 = np.transpose(temp2)
-        state_freq, land_type_counter = generate_trajectory_from_policy(env, policy, deterministic=True)
-        temp = np.reshape(state_freq, (10,10))
-        temp = np.transpose(temp)
-        expected_telda_phi_w = compute_state_visition_freq(state_trans_prob, policy, deterministic=True)
+        policy = value_iteration(state_trans_prob, rewards, deterministic=False)
+        state_freq, land_type_counter = generate_trajectory_from_policy(env, policy, deterministic=False)
+        # temp = np.reshape(state_freq, (10,10))
+        # temp = np.transpose(temp)
+        expected_telda_phi_w = compute_state_visition_freq(state_trans_prob, policy, deterministic=False)
+        # temp2 = np.reshape(expected_telda_phi_w, (10, 10))
+        # temp2= np.transpose(temp2)
         expected_telda_phi_w = np.multiply(state_freq, expected_telda_phi_w)
         expected_telda_phi_w = np.tile(expected_telda_phi_w, (1, 4))
         expected_telda_phi_w = np.multiply(cell_type, expected_telda_phi_w)
@@ -170,13 +178,9 @@ class IRD_reward_hacking:
                 cell_type = self.lavaland.form_rewards(w)
                 rewards = cell_type @ w
                 state_trans_prob = self.lavaland.get_state_trans_mat()
-                policy = value_iteration(state_trans_prob, rewards, deterministic=True)
-                temp2 = np.reshape(policy, (10, 10))
-                temp2 = np.transpose(temp2)
-                state_freq, land_type_counter = generate_trajectory_from_policy(env, policy, deterministic=True)
-                expected_true_phi_w = compute_state_visition_freq(state_trans_prob, policy, deterministic=True)
-                temp = np.reshape(expected_true_phi_w, (10, 10))
-                temp = np.transpose(temp)
+                policy = value_iteration(state_trans_prob, rewards, deterministic=False)
+                state_freq, land_type_counter = generate_trajectory_from_policy(env, policy, deterministic=False)
+                expected_true_phi_w = compute_state_visition_freq(state_trans_prob, policy, deterministic=False)
                 expected_true_phi_w = np.multiply(state_freq, expected_true_phi_w)
                 expected_true_phi_w = np.tile(expected_true_phi_w, (1, 4))
                 expected_true_phi_w = np.multiply(cell_type, expected_true_phi_w)
