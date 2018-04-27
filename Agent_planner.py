@@ -159,11 +159,12 @@ if __name__ == "__main__":
     hit_lava_proxy_w_list = []
     hit_lava_sampled_w_list = []
     hit_lava_policy_list = []
-    experiment_num = 30
+    experiment_num = 100
 
-    w_true = np.random.randint(-5, 5, (20, 4))
+    w_true = np.random.randint(-10, 10, (100, 4))
+    ird = IRD()
 
-    for _ in range(experiment_num):
+    for exp_idx in range(experiment_num):
         # dirt_w = np.random.randint(1, 6)
         # grass_w = np.random.randint(-10, 0)
         # terminal_w = np.random.randint(6, 10)
@@ -175,7 +176,6 @@ if __name__ == "__main__":
         # design_weight[3] = 0
 
         print("using proxy weight: ", design_weight)
-        ird = IRD()
         posterior, true_W = ird.run_ird(design_weight, w_true)
 
         # sample few candidate true_weight from posterior
@@ -185,7 +185,7 @@ if __name__ == "__main__":
         # true_W.reshape((num, 4))
         # sample_space = true_W.tolist()
         # print(sample_space)
-        num_sampled_w = 5
+        num_sampled_w = 10
         pos = np.divide(posterior, posterior.sum())
         sampled_w_indices = np.random.choice(num, num_sampled_w, p=pos)
         sampled_w = true_W[sampled_w_indices].tolist()
@@ -207,6 +207,8 @@ if __name__ == "__main__":
         bounds = form_bounds()
 
         x = linprog(c, A_ub=linprog_ineq_mat, b_ub=linprog_ineq_vec, A_eq=linprog_eq_mat, b_eq=linprog_eq_vec, bounds=bounds, options={"disp": True})
+        if x.success == False:
+            continue
         policy = convert2policy(x)
         print(policy)
         # print(x)
@@ -216,6 +218,8 @@ if __name__ == "__main__":
             hit_lava_sampled_w_list.append(sampled_w)
             hit_lava_policy_list.append(policy)
             print("IRD hit lava, [{}]/[{}]".format(len(hit_lava_policy_list), experiment_num))
+        else:
+            print("IRD avoided lava, [{}]/[{}]".format(len(hit_lava_policy_list), experiment_num))
 
         # start to run baseline
         # baseline_agent = Baseline()
@@ -232,6 +236,10 @@ if __name__ == "__main__":
         if baseline_policy_leads_to_lava(lavaland, temp_baseline_policy):
             hit_lava_baseline_policy.append(temp_baseline_policy)
             print("VI hit lava, [{}]/[{}]".format(len(hit_lava_baseline_policy), experiment_num))
+        else:
+            print("VI avoided lava, [{}]/[{}]".format(len(hit_lava_baseline_policy), experiment_num))
+        print("========= [{}]/[{}] experiments done ==========".format(exp_idx+1, experiment_num))
+
 
     ratio_hit_traj = len(hit_lava_policy_list)/experiment_num
     ratio_hit_traj_baseline = len(hit_lava_baseline_policy)/experiment_num

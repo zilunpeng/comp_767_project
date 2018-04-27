@@ -93,11 +93,20 @@ class IRD:
             # state_freq = np.true_divide(state_freq, tot_steps)
             return phi_trajectories, path_trajectories, state_freq
 
-        def calc_Z_approx_bayes_w(expected_Phi, index, w):
+        def calc_Z_approx_bayes_w(expected_Phi, index, w, all_w):
                 z_w = 0
                 remaining_phi = np.delete(expected_Phi, index, axis=0)
+                remaining_w = np.delete(all_w, index, axis=0)
                 firstTerm = np.dot(w, expected_Phi[index])
                 z_w = z_w + np.exp(firstTerm)
+
+                # version 1
+                # rem = 0
+                # for w_i, phi_i in zip(remaining_w, remaining_phi):
+                #     rem += np.exp(self.beta * np.dot(w_i, phi_i))
+                # z_w += rem
+
+                # version 2
                 rem = [np.exp(self.beta * np.dot(w, phi_i)) for phi_i in remaining_phi]
                 z_w = z_w + sum(rem)
                 return z_w
@@ -184,12 +193,12 @@ class IRD:
         expected_telda_phi.append(expected_telda_phi_w)
 
         # testing: input 1*4 -> 1*25
-        num_true_rewards = 20
+        num_true_rewards = 100
         # # phi_true_trajectories, path_true_trajectories = generate_trajectory(np.array([1,1,1,1]), max_step, num_traj, num_states, env)
         # phi_true_trajectories = phi_trajectories
 
         if w_true is None:
-            w_true = np.random.randint(-5, 5, (num_true_rewards, self.num_states))
+            w_true = np.random.randint(-10, 10, (num_true_rewards, self.num_states))
 
         if self.w_true_expected_phi is not None:
             expected_true_phi = self.w_true_expected_phi
@@ -220,7 +229,10 @@ class IRD:
         for idx, each_w in enumerate(w_true):
             expected_true_reward = np.dot(expected_telda_phi_w, each_w)
             numerator = np.exp(self.beta * expected_true_reward)
-            z_w_true = calc_Z_approx_bayes_w(expected_true_phi, idx, each_w)
+            # version 1
+            z_w_true = calc_Z_approx_bayes_w(expected_true_phi, idx, each_w, w_true)
+            # version 2
+            z_w_true = calc_Z_approx_bayes_w(expected_true_phi, idx, each_w, w_true)
             store_z.append(z_w_true)
             likelihood = np.true_divide(numerator, z_w_true)
             post = likelihood
