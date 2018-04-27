@@ -1,5 +1,6 @@
 # comp_767_project
 Huiwen You, huiwen.you@mail.mcgill.ca 260798462
+
 Zilun Peng, zilun.peng@mail.mcgill.ca 260529763
 
 ### Install gym
