@@ -164,7 +164,7 @@ if __name__ == "__main__":
     hit_lava_policy_list = []
     experiment_num = 100
 
-    w_true = np.random.randint(-10, 10, (50, 4))
+    w_true = np.random.randint(-10, 10, (100, 4))
     ird = IRD()
 
     for _ in range(experiment_num):
