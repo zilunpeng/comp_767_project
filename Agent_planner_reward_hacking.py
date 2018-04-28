@@ -3,7 +3,7 @@ import numpy as np
 from scipy.optimize import linprog
 from IRD_reward_hacking import IRD_reward_hacking as IRD
 from baseline import Baseline
-from value_iteration import VI
+from policy_iteration import PI
 
 def get_opposite_action(action):
     if action==0:
@@ -225,8 +225,8 @@ if __name__ == "__main__":
         # if policy_leads_to_lava(lavaland, baseline_policy):
         #     hit_lava_baseline_policy.append(baseline_policy)
 
-        baseline_agent = VI()
-        baseline_policy = baseline_agent.value_iteration(design_weight)
+        baseline_agent = PI()
+        baseline_policy = baseline_agent.policy_iteration(design_weight)
         temp_baseline_policy = np.reshape(baseline_policy, (10, 10))
         temp_baseline_policy = np.transpose(temp_baseline_policy)
         print("--------baseline policy--------")

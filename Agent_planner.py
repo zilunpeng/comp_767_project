@@ -3,7 +3,7 @@ import numpy as np
 from scipy.optimize import linprog
 from IRD import IRD
 from baseline import Baseline
-from value_iteration import VI
+from policy_iteration import PI
 
 def get_opposite_action(action):
     if action==0:
@@ -182,9 +182,6 @@ if __name__ == "__main__":
 
         print(true_W)
         num = true_W.shape[0]
-        # true_W.reshape((num, 4))
-        # sample_space = true_W.tolist()
-        # print(sample_space)
         num_sampled_w = 10
         pos = np.divide(posterior, posterior.sum())
         sampled_w_indices = np.random.choice(num, num_sampled_w, p=pos)
@@ -227,8 +224,8 @@ if __name__ == "__main__":
         # if policy_leads_to_lava(lavaland, baseline_policy):
         #     hit_lava_baseline_policy.append(baseline_policy)
 
-        baseline_agent = VI()
-        baseline_policy = baseline_agent.value_iteration(design_weight)
+        baseline_agent = PI()
+        baseline_policy = baseline_agent.policy_iteration(design_weight)
         temp_baseline_policy = np.reshape(baseline_policy, (10, 10))
         temp_baseline_policy = np.transpose(temp_baseline_policy)
         print("--------baseline policy--------")
@@ -246,15 +243,3 @@ if __name__ == "__main__":
     print(ratio_hit_traj, ratio_hit_traj_baseline)
     # print(ratio_hit_traj)
     print("-------------the end-------------")
-
-    # file = open(“output.txt”, ”w”)
-    # hit_lava_baseline_policy = []
-    # hit_lava_proxy_w_list = []
-    # hit_lava_sampled_w_list = []
-    # hit_lava_policy_list = []
-    #
-    # file.write(hit_lava_baseline_policy)
-    # file.write(hit_lava_sampled_w_list)
-    # file.write(hit_lava_policy_list)
-    # file.write(hit_lava_proxy_w_list)
-    # file.close()

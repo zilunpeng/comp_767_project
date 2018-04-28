@@ -134,7 +134,7 @@ class IRD:
                 p = np.sum(mu, 1)
                 return p.reshape((N_STATES, 1))
 
-        def value_iteration(state_trans_prob, rewards):
+        def policy_iteration(state_trans_prob, rewards):
             num_cells = 100  # 10*10 grid
             num_actions = 4
             values = np.zeros([num_cells])
@@ -180,7 +180,7 @@ class IRD:
         temp2 = np.transpose(temp2)
         state_trans_prob = self.lavaland.get_state_trans_mat()
 
-        policy = value_iteration(state_trans_prob, rewards)
+        policy = policy_iteration(state_trans_prob, rewards)
         temp2 = np.reshape(policy, (10, 10))
         temp2 = np.transpose(temp2)
         expected_telda_phi_w = compute_state_visition_freq(state_trans_prob, policy)
@@ -209,7 +209,7 @@ class IRD:
                 cell_type = self.lavaland.form_rewards(w)
                 rewards = cell_type @ w
                 state_trans_prob = self.lavaland.get_state_trans_mat()
-                policy = value_iteration(state_trans_prob, rewards)
+                policy = policy_iteration(state_trans_prob, rewards)
                 temp2 = np.reshape(policy, (10, 10))
                 temp2 = np.transpose(temp2)
                 expected_true_phi_w = compute_state_visition_freq(state_trans_prob, policy)
@@ -271,7 +271,7 @@ class IRD:
     #     temp2 = np.reshape(rewards, (10,10))
     #     temp2 = np.transpose(temp2)
     #     state_trans_prob = lavaland.get_state_trans_mat()
-    #     policy = value_iteration(state_trans_prob, rewards, gamma, error=0.01)
+    #     policy = policy_iteration(state_trans_prob, rewards, gamma, error=0.01)
     #     temp2 = np.reshape(policy, (10,10))
     #     temp2 = np.transpose(temp2)
     #     expected_telda_phi_w = compute_state_visition_freq(state_trans_prob, gamma, path_trajectories, policy)
@@ -296,7 +296,7 @@ class IRD:
     #     cell_type = lavaland.form_rewards(w)
     #     rewards = cell_type @ w
     #     state_trans_prob = lavaland.get_state_trans_mat()
-    #     policy = value_iteration(state_trans_prob, rewards, gamma, error=0.01)
+    #     policy = policy_iteration(state_trans_prob, rewards, gamma, error=0.01)
     #     temp2 = np.reshape(policy, (10, 10))
     #     temp2 = np.transpose(temp2)
     #     expected_true_phi_w = compute_state_visition_freq(state_trans_prob, gamma, path_trajectories, policy)
