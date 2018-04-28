@@ -3,7 +3,7 @@ import numpy as np
 from scipy.optimize import linprog
 from IRD_reward_hacking import IRD_reward_hacking as IRD
 from baseline import Baseline
-from value_iteration import VI
+from policy_iteration import PI
 
 def get_opposite_action(action):
     if action==0:
@@ -167,11 +167,8 @@ if __name__ == "__main__":
     w_true = np.random.randint(-10, 10, (100, 4))
     ird = IRD()
 
-    for _ in range(experiment_num):
+    for exp_idx in range(experiment_num):
         design_weight = np.array(np.random.randint(-10, 10, (1, 4))).flatten()
-        #design_weight = np.array((1, 0, 10, 0))
-        # design_weight[3] = 0
-
         print("using proxy weight: ", design_weight)
 
         posterior, true_W, expected_telda_phi_w = ird.run_ird(design_weight, w_true)
@@ -218,6 +215,8 @@ if __name__ == "__main__":
             hit_lava_sampled_w_list.append(sampled_w)
             hit_lava_policy_list.append(policy)
             print("IRD hit lava, [{}]/[{}]".format(len(hit_lava_policy_list), experiment_num))
+        else:
+            print("IRD avoided lava, [{}]/[{}]".format(len(hit_lava_policy_list), experiment_num))
 
         # start to run baseline
         # baseline_agent = Baseline()
@@ -225,30 +224,21 @@ if __name__ == "__main__":
         # if policy_leads_to_lava(lavaland, baseline_policy):
         #     hit_lava_baseline_policy.append(baseline_policy)
 
-        baseline_agent = VI()
-        baseline_policy = baseline_agent.value_iteration(design_weight)
+        baseline_agent = PI()
+        baseline_policy = baseline_agent.policy_iteration(design_weight)
         temp_baseline_policy = np.reshape(baseline_policy, (10, 10))
         temp_baseline_policy = np.transpose(temp_baseline_policy)
         print("--------baseline policy--------")
         print(temp_baseline_policy)
         if baseline_policy_leads_to_lava(lavaland, temp_baseline_policy):
             hit_lava_baseline_policy.append(temp_baseline_policy)
-            print("VI hit lava, [{}]/[{}]".format(len(hit_lava_baseline_policy), experiment_num))
+            print("PI hit lava, [{}]/[{}]".format(len(hit_lava_baseline_policy), experiment_num))
+        else:
+            print("PI avoided lava, [{}]/[{}]".format(len(hit_lava_baseline_policy), experiment_num))
+        print("========= [{}]/[{}] experiments done ==========".format(exp_idx+1, experiment_num))
 
     ratio_hit_traj = len(hit_lava_policy_list)/experiment_num
     ratio_hit_traj_baseline = len(hit_lava_baseline_policy)/experiment_num
     print(ratio_hit_traj, ratio_hit_traj_baseline)
     # print(ratio_hit_traj)
     print("-------------the end-------------")
-
-    # file = open(“output.txt”, ”w”)
-    # hit_lava_baseline_policy = []
-    # hit_lava_proxy_w_list = []
-    # hit_lava_sampled_w_list = []
-    # hit_lava_policy_list = []
-    #
-    # file.write(hit_lava_baseline_policy)
-    # file.write(hit_lava_sampled_w_list)
-    # file.write(hit_lava_policy_list)
-    # file.write(hit_lava_proxy_w_list)
-    # file.close()

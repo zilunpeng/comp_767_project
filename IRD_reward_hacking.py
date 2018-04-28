@@ -115,7 +115,7 @@ class IRD_reward_hacking:
                 p[sub2ind(5, 1)] = 1
                 return p.reshape((N_STATES, 1))
 
-        def value_iteration(state_trans_prob, rewards, deterministic):
+        def policy_iteration(state_trans_prob, rewards, deterministic):
             num_cells = 100  # 10*10 grid
             num_actions = 4
             values = np.zeros([num_cells])
@@ -157,7 +157,7 @@ class IRD_reward_hacking:
         cell_type = self.lavaland.form_rewards(w)
         rewards = cell_type @ w
         state_trans_prob = self.lavaland.get_state_trans_mat()
-        values, policy = value_iteration(state_trans_prob, rewards, deterministic=True)
+        values, policy = policy_iteration(state_trans_prob, rewards, deterministic=True)
         state_freq, land_type_counter = generate_trajectory_from_policy(env, policy, deterministic=True)
         # temp = np.reshape(state_freq, (10,10))
         # temp = np.transpose(temp)
@@ -178,7 +178,7 @@ class IRD_reward_hacking:
                 cell_type = self.lavaland.form_rewards(w)
                 rewards = cell_type @ w
                 state_trans_prob = self.lavaland.get_state_trans_mat()
-                values, policy = value_iteration(state_trans_prob, rewards, deterministic=True)
+                values, policy = policy_iteration(state_trans_prob, rewards, deterministic=True)
                 state_freq, land_type_counter = generate_trajectory_from_policy(env, policy, deterministic=True)
                 expected_true_phi_w = compute_state_visition_freq(state_trans_prob, policy, deterministic=True)
                 expected_true_phi_w = np.multiply(state_freq, expected_true_phi_w)
