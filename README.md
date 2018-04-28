@@ -13,7 +13,9 @@ pip3 install -e .
 
 Posterior calculation is implemented in IRD.py
 
-Linear programming risk-averse planner and runner for experiment 4.2 is under Agent_planner.py
+Linear programming risk-averse planner and runner for experiment 4.1 4.2 is under Agent_planner.py
+
+experiment 4.3 can be run using Agent_planner_reward_hacking.py
 
 mdp environment setup code is under ./gym-lavaland/env
 
