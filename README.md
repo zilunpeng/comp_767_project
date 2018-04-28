@@ -12,11 +12,13 @@ pip3 install -e .
 ```
 
 Posterior calculation is implemented in IRD.py
+
 Linear programming risk-averse planner and runner for experiment 4.2 is under Agent_planner.py
 
-
-
 mdp environment setup code is under ./gym-lavaland/env
+
 Lavaland_spec.py contains preparation code for risk-averse planner.
+
 policy_iteration.py contains the PI implementation.
+
 baseline.py contains another baseline method i.e. q_learning
