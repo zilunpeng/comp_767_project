@@ -172,8 +172,6 @@ if __name__ == "__main__":
         # design_weight = np.array([dirt_w, grass_w, terminal_w, unknown_w])
 
         design_weight = np.array(np.random.randint(-10, 10, (1, 4))).flatten()
-        # design_weight = np.array((-2, 7, 3, 0))
-        # design_weight[3] = 0
 
         print("using proxy weight: ", design_weight)
         posterior, true_W = ird.run_ird(design_weight, w_true)
@@ -232,9 +230,9 @@ if __name__ == "__main__":
         print(temp_baseline_policy)
         if baseline_policy_leads_to_lava(lavaland, temp_baseline_policy):
             hit_lava_baseline_policy.append(temp_baseline_policy)
-            print("VI hit lava, [{}]/[{}]".format(len(hit_lava_baseline_policy), experiment_num))
+            print("PI hit lava, [{}]/[{}]".format(len(hit_lava_baseline_policy), experiment_num))
         else:
-            print("VI avoided lava, [{}]/[{}]".format(len(hit_lava_baseline_policy), experiment_num))
+            print("PI avoided lava, [{}]/[{}]".format(len(hit_lava_baseline_policy), experiment_num))
         print("========= [{}]/[{}] experiments done ==========".format(exp_idx+1, experiment_num))
 
 
